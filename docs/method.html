@@ -1,488 +1,579 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Method — Drape</title>
-<meta name="description" content="Five rules for testing whether a proposed capability probe can work at all — before spending anything on models. Derived from a failed turtle-graphics probe.">
-<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-<link rel="canonical" href="https://namandhakad712.github.io/drape/method.html">
-<meta name="author" content="Naman Dhakad">
-<meta name="theme-color" content="#1f5fa8">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Drape">
-<meta property="og:url" content="https://namandhakad712.github.io/drape/method.html">
-<meta property="og:title" content="Method — Drape">
-<meta property="og:description" content="Five rules for testing whether a proposed capability probe can work at all — before spending anything on models. Derived from a failed turtle-graphics probe.">
-<meta property="og:image" content="https://namandhakad712.github.io/drape/assets/figures/fig1-degeneracy.svg">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Method — Drape">
-<meta name="twitter:description" content="Five rules for testing whether a proposed capability probe can work at all — before spending anything on models. Derived from a failed turtle-graphics probe.">
-<link rel="stylesheet" href="assets/style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Method — Drape</title>
+  <meta name="description"
+    content="Five rules for testing whether a proposed capability probe can work at all — before spending anything on models. Derived from a failed turtle-graphics probe.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://namandhakad712.github.io/drape/method.html">
+  <meta name="author" content="Naman Dhakad">
+  <meta name="theme-color" content="#1f5fa8">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Drape">
+  <meta property="og:url" content="https://namandhakad712.github.io/drape/method.html">
+  <meta property="og:title" content="Method — Drape">
+  <meta property="og:description"
+    content="Five rules for testing whether a proposed capability probe can work at all — before spending anything on models. Derived from a failed turtle-graphics probe.">
+  <meta property="og:image" content="https://namandhakad712.github.io/drape/assets/figures/fig1-degeneracy.svg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Method — Drape">
+  <meta name="twitter:description"
+    content="Five rules for testing whether a proposed capability probe can work at all — before spending anything on models. Derived from a failed turtle-graphics probe.">
+  <link rel="stylesheet" href="assets/style.css">
 </head>
+
 <body>
 
-<header class="site-header">
-  <div class="inner">
-    <a class="brand" href="index.html">Drape <span>negative result</span></a>
-    <nav class="site-nav">
-      <a href="index.html">Overview</a>
-      <a href="paper.html">Paper</a>
-      <a href="findings.html">Findings</a>
-      <a href="method.html" aria-current="page">Method</a>
-      <a href="reproduce.html">Reproduce</a>
-      <a href="https://github.com/namandhakad712/drape">GitHub</a>
-    </nav>
-  </div>
-</header>
+  <header class="site-header">
+    <div class="inner">
+      <a class="brand" href="index.html">Drape <span>negative result</span></a>
+      <nav class="site-nav">
+        <a href="index.html">Overview</a>
+        <a href="paper.html">Paper</a>
+        <a href="findings.html">Findings</a>
+        <a href="method.html" aria-current="page">Method</a>
+        <a href="reproduce.html">Reproduce</a>
+        <a href="https://github.com/namandhakad712/turtle-graphics-probe">GitHub</a>
+      </nav>
+    </div>
+  </header>
 
-<main>
+  <main>
 
-<section class="hero">
-  <p class="kicker">Method</p>
-  <h1>Five rules for testing a probe before you spend anything on models.</h1>
-  <p class="lede">
-    The negative result is specific to turtle graphics. The framework is not. Every rule below was
-    derived from a failure in this project, and every one of them is checkable in an afternoon with
-    no model access, no API key, and no compute budget.
-  </p>
-  <div class="meta">
-    <span>Zero-dependency</span>
-    <span>No model calls</span>
-    <span>Applicable to any capability probe</span>
-  </div>
-</section>
+    <section class="hero">
+      <p class="kicker">Method</p>
+      <h1>Five rules for testing a probe before you spend anything on models.</h1>
+      <p class="lede">
+        The negative result is specific to turtle graphics. The framework is not. Every rule below was
+        derived from a failure in this project, and every one of them is checkable in an afternoon with
+        no model access, no API key, and no compute budget.
+      </p>
+      <div class="meta">
+        <span>Zero-dependency</span>
+        <span>No model calls</span>
+        <span>Applicable to any capability probe</span>
+      </div>
+    </section>
 
-<div class="toc">
-  <h3>On this page</h3>
-  <ol>
-    <li><a href="#r1">Rule 1 — Two-door validity</a></li>
-    <li><a href="#r2">Rule 2 — Degeneracy is joint, not intrinsic</a></li>
-    <li><a href="#r3">Rule 3 — Prefer scaling over thresholds</a></li>
-    <li><a href="#r4">Rule 4 — Floor-check the measurement</a></li>
-    <li><a href="#r5">Rule 5 — Price every required quantity</a></li>
-    <li><a href="#applied">The five rules applied to this project</a></li>
-    <li><a href="#prereg">Pre-registration: the outcome table</a></li>
-    <li><a href="#checklist">The checklist</a></li>
-    <li><a href="#limits">What the framework does not do</a></li>
-  </ol>
-</div>
+    <div class="toc">
+      <h3>On this page</h3>
+      <ol>
+        <li><a href="#r1">Rule 1 — Two-door validity</a></li>
+        <li><a href="#r2">Rule 2 — Degeneracy is joint, not intrinsic</a></li>
+        <li><a href="#r3">Rule 3 — Prefer scaling over thresholds</a></li>
+        <li><a href="#r4">Rule 4 — Floor-check the measurement</a></li>
+        <li><a href="#r5">Rule 5 — Price every required quantity</a></li>
+        <li><a href="#applied">The five rules applied to this project</a></li>
+        <li><a href="#prereg">Pre-registration: the outcome table</a></li>
+        <li><a href="#checklist">The checklist</a></li>
+        <li><a href="#limits">What the framework does not do</a></li>
+      </ol>
+    </div>
 
-<div class="prose">
+    <div class="prose">
 
-<p>
-  A capability probe is an instrument. Instruments are usually validated against known inputs before
-  they are pointed at anything unknown — a scale is tared, a thermometer is checked in ice water, a
-  microphone is calibrated against a reference tone. The proposal here is that the same discipline
-  applies to benchmark items, and that the check is cheap enough to be routine.
-</p>
+      <p>
+        A capability probe is an instrument. Instruments are usually validated against known inputs before
+        they are pointed at anything unknown — a scale is tared, a thermometer is checked in ice water, a
+        microphone is calibrated against a reference tone. The proposal here is that the same discipline
+        applies to benchmark items, and that the check is cheap enough to be routine.
+      </p>
 
-<p>
-  The five rules below are the checks that would have caught every failure in this project. They are
-  ordered by how early they can be run and how much they cost to run, not by importance.
-</p>
+      <p>
+        The five rules below are the checks that would have caught every failure in this project. They are
+        ordered by how early they can be run and how much they cost to run, not by importance.
+      </p>
 
-<h2 id="r1">Rule 1 — Two-door validity</h2>
+      <h2 id="r1">Rule 1 — Two-door validity</h2>
 
-<blockquote>
-  <p>
-    An item is valid only if it is expensive to solve by <em>every</em> cheap route. Enumerate the
-    routes before you guard one.
-  </p>
-</blockquote>
+      <blockquote>
+        <p>
+          An item is valid only if it is expensive to solve by <em>every</em> cheap route. Enumerate the
+          routes before you guard one.
+        </p>
+      </blockquote>
 
-<p>
-  The design under test guarded a single route: can a small state-free program draw this shape? The
-  test was well built and it worked. It missed the second route entirely — can a small set of
-  absolute actions draw this shape? — because the second route was never considered.
-</p>
+      <p>
+        The design under test guarded a single route: can a small state-free program draw this shape? The
+        test was well built and it worked. It missed the second route entirely — can a small set of
+        absolute actions draw this shape? — because the second route was never considered.
+      </p>
 
-<p>
-  The second door is worse than the first, and not because it is cheaper. It is worse because it
-  leaves no trace in the output statistics. A subject that bypasses a task via a small program still
-  has to <em>find</em> the program, and that shows up as structure in its output. A subject that
-  bypasses via absolute actions simply reads landmarks off the input and jumps between them: the
-  drawing is correct, the metric reports a perfect score, and the mechanism under test was never
-  engaged. There is no signature to detect after the fact.
-</p>
+      <p>
+        The second door is worse than the first, and not because it is cheaper. It is worse because it
+        leaves no trace in the output statistics. A subject that bypasses a task via a small program still
+        has to <em>find</em> the program, and that shows up as structure in its output. A subject that
+        bypasses via absolute actions simply reads landmarks off the input and jumps between them: the
+        drawing is correct, the metric reports a perfect score, and the mechanism under test was never
+        engaged. There is no signature to detect after the fact.
+      </p>
 
-<div class="note">
-  <span class="lbl">How to run it</span>
-  <p>
-    For each candidate item, compute the cost of the intended route and the cost of the cheapest
-    unintended route you can think of. If the unintended route is cheap, the item is dead regardless
-    of how expensive the intended route is. Here, cost was measured as the fewest chords within
-    tolerance of the true path, computed by greedy extension.
-  </p>
-</div>
+      <div class="note">
+        <span class="lbl">How to run it</span>
+        <p>
+          For each candidate item, compute the cost of the intended route and the cost of the cheapest
+          unintended route you can think of. If the unintended route is cheap, the item is dead regardless
+          of how expensive the intended route is. Here, cost was measured as the fewest chords within
+          tolerance of the true path, computed by greedy extension.
+        </p>
+      </div>
 
-<p>
-  In this project the second door killed six of nine shape families on its own — including a regular
-  199-segment zigzag, drawn by a single absolute move.
-</p>
+      <p>
+        In this project the second door killed six of nine shape families on its own — including a regular
+        199-segment zigzag, drawn by a single absolute move.
+      </p>
 
-<h2 id="r2">Rule 2 — Degeneracy is joint, not intrinsic</h2>
+      <h2 id="r2">Rule 2 — Degeneracy is joint, not intrinsic</h2>
 
-<blockquote>
-  <p>
-    "Is this item degenerate?" is not a well-formed question. Degeneracy is a property of the item,
-    the grading tolerance, and the search class together — and you chose two of the three.
-  </p>
-</blockquote>
+      <blockquote>
+        <p>
+          "Is this item degenerate?" is not a well-formed question. Degeneracy is a property of the item,
+          the grading tolerance, and the search class together — and you chose two of the three.
+        </p>
+      </blockquote>
 
-<p>
-  A fixed-tolerance test produces a binary verdict. That verdict conceals a decision. In this
-  project the same regular zigzag requires <strong>199</strong> absolute moves at 1% tolerance and
-  <strong>1</strong> at 2%. Nothing about the shape changed between those two measurements. The
-  threshold was the finding.
-</p>
+      <p>
+        A fixed-tolerance test produces a binary verdict. That verdict conceals a decision. In this
+        project the same regular zigzag requires <strong>199</strong> absolute moves at 1% tolerance and
+        <strong>1</strong> at 2%. Nothing about the shape changed between those two measurements. The
+        threshold was the finding.
+      </p>
 
-<p>
-  The same argument applies to the search class. A "valid" verdict from a fitter means "no cheap
-  program found <em>within this class</em>". Widen the class and more items die. In this project a
-  family scored as valid with 54.51% error while being an obvious three-constant closed form that
-  the fitter simply could not represent.
-</p>
+      <p>
+        The same argument applies to the search class. A "valid" verdict from a fitter means "no cheap
+        program found <em>within this class</em>". Widen the class and more items die. In this project a
+        family scored as valid with 54.51% error while being an obvious three-constant closed form that
+        the fitter simply could not represent.
+      </p>
 
-<div class="note amber">
-  <span class="lbl">How to report it</span>
-  <p>
-    Report degeneracy as a function of the threshold, with a table or curve rather than a verdict.
-    Report the search class explicitly, and state the verdict as a lower bound. A reader who sees
-    the curve can disagree with your threshold; a reader who sees "VALID" cannot.
-  </p>
-</div>
+      <div class="note amber">
+        <span class="lbl">How to report it</span>
+        <p>
+          Report degeneracy as a function of the threshold, with a table or curve rather than a verdict.
+          Report the search class explicitly, and state the verdict as a lower bound. A reader who sees
+          the curve can disagree with your threshold; a reader who sees "VALID" cannot.
+        </p>
+      </div>
 
-<h2 id="r3">Rule 3 — Prefer scaling over thresholds</h2>
+      <h2 id="r3">Rule 3 — Prefer scaling over thresholds</h2>
 
-<blockquote>
-  <p>
-    Ask whether the required complexity <em>grows</em> with input length. That question is robust to
-    threshold choice. A single number at a single length is not.
-  </p>
-</blockquote>
+      <blockquote>
+        <p>
+          Ask whether the required complexity <em>grows</em> with input length. That question is robust to
+          threshold choice. A single number at a single length is not.
+        </p>
+      </blockquote>
 
-<p>
-  This is the only test in the project that is not an artefact of a parameter we selected, and it is
-  correspondingly the only one whose result is unambiguous. The test is simple: fit the item at
-  several lengths and see whether the cost of a compact solution stays flat or grows.
-</p>
+      <p>
+        This is the only test in the project that is not an artefact of a parameter we selected, and it is
+        correspondingly the only one whose result is unambiguous. The test is simple: fit the item at
+        several lengths and see whether the cost of a compact solution stays flat or grows.
+      </p>
 
-<div class="tbl-scroll">
-<table>
-  <caption>Table 1. The scaling test as a discriminator.</caption>
-  <thead><tr><th>Behaviour of fit cost with N</th><th>Interpretation</th><th>Item status</th></tr></thead>
-  <tbody>
-    <tr><td>constant</td><td>the shape has a name</td><td><strong>degenerate</strong> — a subject that knows the name wins at any length</td></tr>
-    <tr><td>grows with N</td><td>no fixed program reproduces it</td><td>candidate — survives this test</td></tr>
-    <tr><td>cannot be fit at any N</td><td>no compact form in the search class at all</td><td>strongest candidate</td></tr>
-  </tbody>
-</table>
-</div>
+      <div class="tbl-scroll">
+        <table>
+          <caption>Table 1. The scaling test as a discriminator.</caption>
+          <thead>
+            <tr>
+              <th>Behaviour of fit cost with N</th>
+              <th>Interpretation</th>
+              <th>Item status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>constant</td>
+              <td>the shape has a name</td>
+              <td><strong>degenerate</strong> — a subject that knows the name wins at any length</td>
+            </tr>
+            <tr>
+              <td>grows with N</td>
+              <td>no fixed program reproduces it</td>
+              <td>candidate — survives this test</td>
+            </tr>
+            <tr>
+              <td>cannot be fit at any N</td>
+              <td>no compact form in the search class at all</td>
+              <td>strongest candidate</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-<p>
-  The result here: <strong>the same four parameters draw the spiral whether it has 25 segments or
-  200.</strong> A model that recognises "spiral" reproduces it exactly, at any length, forever. That
-  is a property of the item, not of the model, and no amount of data collection changes it.
-</p>
+      <p>
+        The result here: <strong>the same four parameters draw the spiral whether it has 25 segments or
+          200.</strong> A model that recognises "spiral" reproduces it exactly, at any length, forever. That
+        is a property of the item, not of the model, and no amount of data collection changes it.
+      </p>
 
-<p>
-  Where both a fixed-threshold test and a scaling test are available, report the scaling behaviour
-  as the primary result and the threshold verdict as a footnote.
-</p>
+      <p>
+        Where both a fixed-threshold test and a scaling test are available, report the scaling behaviour
+        as the primary result and the threshold verdict as a footnote.
+      </p>
 
-<h2 id="r4">Rule 4 — Floor-check the measurement</h2>
+      <h2 id="r4">Rule 4 — Floor-check the measurement</h2>
 
-<blockquote>
-  <p>
-    Feed the exact known-correct answer back through the complete pipeline — metric, alignment,
-    normalisation, aggregation — and assert that it scores zero. Run it on every execution and fail
-    loudly.
-  </p>
-</blockquote>
+      <blockquote>
+        <p>
+          Feed the exact known-correct answer back through the complete pipeline — metric, alignment,
+          normalisation, aggregation — and assert that it scores zero. Run it on every execution and fail
+          loudly.
+        </p>
+      </blockquote>
 
-<p>
-  This rule is not a formality. Four bugs in the measurement code of this project were found by it,
-  and all four had made the headline result look <em>stronger</em> than it was. That direction is
-  not an accident: a bug that flatters your conclusion is the one you have no incentive to hunt.
-</p>
+      <p>
+        This rule is not a formality. Four bugs in the measurement code of this project were found by it,
+        and all four had made the headline result look <em>stronger</em> than it was. That direction is
+        not an accident: a bug that flatters your conclusion is the one you have no incentive to hunt.
+      </p>
 
-<div class="tbl-scroll">
-<table>
-  <caption>Table 2. What the floor check caught, and how each bug hid.</caption>
-  <thead><tr><th>Bug</th><th>Why it did not announce itself</th></tr></thead>
-  <tbody>
-    <tr>
-      <td>Kinematics derived from a path resampled to equal arc length.</td>
-      <td>Resampling forces every segment to the same length <em>by construction</em>. The
-      step-length sequence was erased and the test silently measured turn angles only. Nothing
-      errored; the numbers just quietly meant something else.</td>
-    </tr>
-    <tr>
-      <td><code>heading -= turn</code> instead of <code>heading += turn</code>.</td>
-      <td>Reproductions were compared against a <em>mirror</em> of the target. The metric is
-      nearest-point, so a mirrored smooth curve still scores well. The bug survived every
-      qualitative inspection.</td>
-    </tr>
-    <tr>
-      <td>Alignment returned a centred shape scored against an uncentred original.</td>
-      <td>A constant translation error was added to every measurement — small enough to look like
-      noise, systematic enough to matter.</td>
-    </tr>
-    <tr>
-      <td>Unseeded rotation search.</td>
-      <td>For symmetric shapes the search locks onto the wrong symmetry axis — a five-point star is
-      invariant under 72° rotations — and reports a large error for an exact reproduction.</td>
-    </tr>
-  </tbody>
-</table>
-</div>
+      <div class="tbl-scroll">
+        <table>
+          <caption>Table 2. What the floor check caught, and how each bug hid.</caption>
+          <thead>
+            <tr>
+              <th>Bug</th>
+              <th>Why it did not announce itself</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Kinematics derived from a path resampled to equal arc length.</td>
+              <td>Resampling forces every segment to the same length <em>by construction</em>. The
+                step-length sequence was erased and the test silently measured turn angles only. Nothing
+                errored; the numbers just quietly meant something else.</td>
+            </tr>
+            <tr>
+              <td><code>heading -= turn</code> instead of <code>heading += turn</code>.</td>
+              <td>Reproductions were compared against a <em>mirror</em> of the target. The metric is
+                nearest-point, so a mirrored smooth curve still scores well. The bug survived every
+                qualitative inspection.</td>
+            </tr>
+            <tr>
+              <td>Alignment returned a centred shape scored against an uncentred original.</td>
+              <td>A constant translation error was added to every measurement — small enough to look like
+                noise, systematic enough to matter.</td>
+            </tr>
+            <tr>
+              <td>Unseeded rotation search.</td>
+              <td>For symmetric shapes the search locks onto the wrong symmetry axis — a five-point star is
+                invariant under 72° rotations — and reports a large error for an exact reproduction.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-<p>
-  The flagship spiral's measured error went from <strong>3.03%</strong> before the fixes to
-  <strong>0.27%</strong> after. The headline finding had been understated by a factor of eleven by
-  bugs that made the instrument look better than it was.
-</p>
+      <p>
+        The flagship spiral's measured error went from <strong>3.03%</strong> before the fixes to
+        <strong>0.27%</strong> after. The headline finding had been understated by a factor of eleven by
+        bugs that made the instrument look better than it was.
+      </p>
 
-<div class="note green">
-  <span class="lbl">What a passing floor check looks like</span>
-  <pre style="margin:8px 0 0;background:transparent;border:none;padding:0;"><code>FLOOR CHECK -- the exact program must score 0.00%
+      <div class="note green">
+        <span class="lbl">What a passing floor check looks like</span>
+        <pre style="margin:8px 0 0;background:transparent;border:none;padding:0;"><code>FLOOR CHECK -- the exact program must score 0.00%
   spiral (analytic)              0.0000%
   sine wave (analytic)           0.0000%
   ...
   worst floor: 0.0000%  --  PASS</code></pre>
-</div>
+      </div>
 
-<p>
-  Two practical details. First, the check must exercise the <em>whole</em> pipeline, not the metric
-  in isolation — three of the four bugs above lived in alignment and preprocessing, downstream of
-  the distance function. Second, one bug should get one assertion: a floor check that asserts a
-  single aggregate number catches a single class of bug. Ours asserts per-family.
-</p>
+      <p>
+        Two practical details. First, the check must exercise the <em>whole</em> pipeline, not the metric
+        in isolation — three of the four bugs above lived in alignment and preprocessing, downstream of
+        the distance function. Second, one bug should get one assertion: a floor check that asserts a
+        single aggregate number catches a single class of bug. Ours asserts per-family.
+      </p>
 
-<h2 id="r5">Rule 5 — Price every required quantity</h2>
+      <h2 id="r5">Rule 5 — Price every required quantity</h2>
 
-<blockquote>
-  <p>
-    Enumerate the quantities the item requires the subject to know. For each, ask whether it is
-    locally readable from the input, or recomputable from the subject's own output. If every
-    quantity is one or the other, the item cannot isolate the mechanism it claims to measure — no
-    matter how difficult it is.
-  </p>
-</blockquote>
+      <blockquote>
+        <p>
+          Enumerate the quantities the item requires the subject to know. For each, ask whether it is
+          locally readable from the input, or recomputable from the subject's own output. If every
+          quantity is one or the other, the item cannot isolate the mechanism it claims to measure — no
+          matter how difficult it is.
+        </p>
+      </blockquote>
 
-<p>
-  This is the rule that produced the fatal finding, and it is the only one of the five that cannot
-  be fixed by better design once it fails. It is also the cheapest to run: it is an argument, not a
-  computation.
-</p>
+      <p>
+        This is the rule that produced the fatal finding, and it is the only one of the five that cannot
+        be fixed by better design once it fails. It is also the cheapest to run: it is an argument, not a
+        computation.
+      </p>
 
-<p>
-  Applied here, the enumeration is short. To emit the command for segment <em>k</em>, the subject
-  needs the turn from segment <em>k−1</em> to segment <em>k</em>. That is the angle between two
-  adjacent pieces of the input image — locally readable. It does <em>not</em> need its own heading,
-  because the simulator maintains that. And where it does need absolute knowledge, it can obtain it
-  by reading a landmark off the image, or by re-summing the tokens it has already emitted.
-</p>
+      <p>
+        Applied here, the enumeration is short. To emit the command for segment <em>k</em>, the subject
+        needs the turn from segment <em>k−1</em> to segment <em>k</em>. That is the angle between two
+        adjacent pieces of the input image — locally readable. It does <em>not</em> need its own heading,
+        because the simulator maintains that. And where it does need absolute knowledge, it can obtain it
+        by reading a landmark off the image, or by re-summing the tokens it has already emitted.
+      </p>
 
-<figure>
-  <img src="assets/figures/fig7-requirements.svg"
-       alt="Diagram showing the bend angle readable from the image versus the model's own heading, which the turtle holds. Below, the two escape routes: scratch work in the output, and re-summing already-emitted commands.">
-  <figcaption>
-    <b>Figure 1.</b> The requirement analysis for the turtle probe. Both routes to every required
-    quantity are cheap, and neither goes through the mechanism the item was designed to test.
-  </figcaption>
-</figure>
+      <figure>
+        <img src="assets/figures/fig7-requirements.svg"
+          alt="Diagram showing the bend angle readable from the image versus the model's own heading, which the turtle holds. Below, the two escape routes: scratch work in the output, and re-summing already-emitted commands.">
+        <figcaption>
+          <b>Figure 1.</b> The requirement analysis for the turtle probe. Both routes to every required
+          quantity are cheap, and neither goes through the mechanism the item was designed to test.
+        </figcaption>
+      </figure>
 
-<div class="note red">
-  <span class="lbl">The general form</span>
-  <p>
-    If a subject can obtain every quantity it needs from the input it was given, or by re-reading
-    its own output, then the item measures the subject's ability to route information — not the
-    representational format it uses to do so. Difficulty is not evidence of the mechanism.
-  </p>
-</div>
+      <div class="note red">
+        <span class="lbl">The general form</span>
+        <p>
+          If a subject can obtain every quantity it needs from the input it was given, or by re-reading
+          its own output, then the item measures the subject's ability to route information — not the
+          representational format it uses to do so. Difficulty is not evidence of the mechanism.
+        </p>
+      </div>
 
-<h2 id="applied">The five rules applied to this project</h2>
+      <h2 id="applied">The five rules applied to this project</h2>
 
-<div class="tbl-scroll">
-<table>
-  <caption>Table 3. Each rule, what it found here, and whether the failure was correctable.</caption>
-  <thead><tr><th>Rule</th><th>Finding</th><th>Correctable?</th></tr></thead>
-  <tbody>
-    <tr>
-      <td>1 — Two-door validity</td>
-      <td>6 of 9 families dead; a regular zigzag drawn by one absolute move</td>
-      <td>Yes — restrict to closed-loop relative-only items</td>
-    </tr>
-    <tr>
-      <td>2 — Degeneracy is joint</td>
-      <td>Same zigzag: 199 hops at 1% tolerance, 1 hop at 2%</td>
-      <td>Yes — pre-register the tolerance and report the curve</td>
-    </tr>
-    <tr>
-      <td>3 — Prefer scaling</td>
-      <td>4 parameters fit the spiral at N=25 and at N=200</td>
-      <td>No — this is a property of the item, not the test</td>
-    </tr>
-    <tr>
-      <td>4 — Floor-check</td>
-      <td>4 bugs, all flattering the conclusion; error understated 11×</td>
-      <td>Yes — fixed, and asserted on every run</td>
-    </tr>
-    <tr>
-      <td>5 — Price required quantities</td>
-      <td>Every required quantity is locally readable or recomputable</td>
-      <td><strong>No — this is why the line is closed</strong></td>
-    </tr>
-  </tbody>
-</table>
-</div>
+      <div class="tbl-scroll">
+        <table>
+          <caption>Table 3. Each rule, what it found here, and whether the failure was correctable.</caption>
+          <thead>
+            <tr>
+              <th>Rule</th>
+              <th>Finding</th>
+              <th>Correctable?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1 — Two-door validity</td>
+              <td>6 of 9 families dead; a regular zigzag drawn by one absolute move</td>
+              <td>Yes — restrict to closed-loop relative-only items</td>
+            </tr>
+            <tr>
+              <td>2 — Degeneracy is joint</td>
+              <td>Same zigzag: 199 hops at 1% tolerance, 1 hop at 2%</td>
+              <td>Yes — pre-register the tolerance and report the curve</td>
+            </tr>
+            <tr>
+              <td>3 — Prefer scaling</td>
+              <td>4 parameters fit the spiral at N=25 and at N=200</td>
+              <td>No — this is a property of the item, not the test</td>
+            </tr>
+            <tr>
+              <td>4 — Floor-check</td>
+              <td>4 bugs, all flattering the conclusion; error understated 11×</td>
+              <td>Yes — fixed, and asserted on every run</td>
+            </tr>
+            <tr>
+              <td>5 — Price required quantities</td>
+              <td>Every required quantity is locally readable or recomputable</td>
+              <td><strong>No — this is why the line is closed</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-<p>
-  Rules 1, 2 and 4 are engineering. They cost an afternoon and they are worth running on any probe,
-  because each of them can save a study. Rule 3 is a property of the item family and cannot be
-  engineered around; it tells you to pick a different family. Rule 5 is a property of the
-  architecture, and when it fails there is no item family left to pick.
-</p>
+      <p>
+        Rules 1, 2 and 4 are engineering. They cost an afternoon and they are worth running on any probe,
+        because each of them can save a study. Rule 3 is a property of the item family and cannot be
+        engineered around; it tells you to pick a different family. Rule 5 is a property of the
+        architecture, and when it fails there is no item family left to pick.
+      </p>
 
-<h2 id="prereg">Pre-registration: the outcome table</h2>
+      <h2 id="prereg">Pre-registration: the outcome table</h2>
 
-<p>
-  A framework that only tells you an item is bad is half a framework. The other half is committing
-  to what each possible result would mean, before the data exists — because §2 above shows how
-  easily the threshold, and therefore the conclusion, can be chosen after the fact.
-</p>
+      <p>
+        A framework that only tells you an item is bad is half a framework. The other half is committing
+        to what each possible result would mean, before the data exists — because §2 above shows how
+        easily the threshold, and therefore the conclusion, can be chosen after the fact.
+      </p>
 
-<p>
-  For completeness, the conditions and interpretation frozen before any model call in this project.
-  Condition C3 and C5 are the study; the remainder exist so that C3 and C5 can be interpreted.
-</p>
+      <p>
+        For completeness, the conditions and interpretation frozen before any model call in this project.
+        Condition C3 and C5 are the study; the remainder exist so that C3 and C5 can be interpreted.
+      </p>
 
-<div class="tbl-scroll">
-<table>
-  <caption>Table 4. Pre-registered conditions. Not executed — the instrument failed first.</caption>
-  <thead><tr><th>ID</th><th>Condition</th><th>Purpose</th></tr></thead>
-  <tbody>
-    <tr><td>C0</td><td>copy the image</td><td>fidelity ceiling</td></tr>
-    <tr><td>C1</td><td>describe in words only</td><td>no-image baseline</td></tr>
-    <tr><td>C2</td><td>reproduce, all commands allowed</td><td>the naive task</td></tr>
-    <tr><td>C3</td><td>reproduce, relative commands only</td><td>forces state knowledge</td></tr>
-    <tr><td>C4</td><td>reproduce from a description, no image</td><td>isolates perception from generation</td></tr>
-    <tr><td>C5</td><td>C3 with output reasoning forbidden</td><td>isolates hidden state from visible arithmetic</td></tr>
-  </tbody>
-</table>
-</div>
+      <div class="tbl-scroll">
+        <table>
+          <caption>Table 4. Pre-registered conditions. Not executed — the instrument failed first.</caption>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Condition</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>C0</td>
+              <td>copy the image</td>
+              <td>fidelity ceiling</td>
+            </tr>
+            <tr>
+              <td>C1</td>
+              <td>describe in words only</td>
+              <td>no-image baseline</td>
+            </tr>
+            <tr>
+              <td>C2</td>
+              <td>reproduce, all commands allowed</td>
+              <td>the naive task</td>
+            </tr>
+            <tr>
+              <td>C3</td>
+              <td>reproduce, relative commands only</td>
+              <td>forces state knowledge</td>
+            </tr>
+            <tr>
+              <td>C4</td>
+              <td>reproduce from a description, no image</td>
+              <td>isolates perception from generation</td>
+            </tr>
+            <tr>
+              <td>C5</td>
+              <td>C3 with output reasoning forbidden</td>
+              <td>isolates hidden state from visible arithmetic</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-<div class="tbl-scroll">
-<table>
-  <caption>Table 5. Pre-registered interpretation of outcomes.</caption>
-  <thead><tr><th>Observation</th><th>Interpretation</th></tr></thead>
-  <tbody>
-    <tr><td>C3 ≈ C2 and C5 ≈ C3</td><td>state knowledge is not the bottleneck; the task measures perception</td></tr>
-    <tr><td>C3 ≪ C2</td><td>absolute commands were carrying the task — narrow finding</td></tr>
-    <tr><td>C5 ≪ C3</td><td>visible arithmetic was carrying the task — models account in their output</td></tr>
-    <tr><td>C5 ≈ C3, both ≪ C0</td><td>the only outcome supporting the original premise</td></tr>
-    <tr><td>flat across length</td><td>the length lever does not work; report and stop</td></tr>
-  </tbody>
-</table>
-</div>
+      <div class="tbl-scroll">
+        <table>
+          <caption>Table 5. Pre-registered interpretation of outcomes.</caption>
+          <thead>
+            <tr>
+              <th>Observation</th>
+              <th>Interpretation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>C3 ≈ C2 and C5 ≈ C3</td>
+              <td>state knowledge is not the bottleneck; the task measures perception</td>
+            </tr>
+            <tr>
+              <td>C3 ≪ C2</td>
+              <td>absolute commands were carrying the task — narrow finding</td>
+            </tr>
+            <tr>
+              <td>C5 ≪ C3</td>
+              <td>visible arithmetic was carrying the task — models account in their output</td>
+            </tr>
+            <tr>
+              <td>C5 ≈ C3, both ≪ C0</td>
+              <td>the only outcome supporting the original premise</td>
+            </tr>
+            <tr>
+              <td>flat across length</td>
+              <td>the length lever does not work; report and stop</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-<p>
-  Metric and tolerance were fixed in advance: symmetric mean path distance reported together with
-  coverage, at 1% of shape diameter. §2 is the reason this must be frozen before data exists rather
-  than after.
-</p>
+      <p>
+        Metric and tolerance were fixed in advance: symmetric mean path distance reported together with
+        coverage, at 1% of shape diameter. §2 is the reason this must be frozen before data exists rather
+        than after.
+      </p>
 
-<h2 id="checklist">The checklist</h2>
+      <h2 id="checklist">The checklist</h2>
 
-<p>
-  The five rules as a list to copy into whatever you are working on. Nothing here requires model
-  access, and the whole sequence is doable in an afternoon.
-</p>
+      <p>
+        The five rules as a list to copy into whatever you are working on. Nothing here requires model
+        access, and the whole sequence is doable in an afternoon.
+      </p>
 
-<div class="tbl-scroll">
-<table>
-  <caption>Table 6. Copy this.</caption>
-  <thead><tr><th>#</th><th>Check</th><th>Fail condition</th></tr></thead>
-  <tbody>
-    <tr>
-      <td>1</td>
-      <td>List every cheap route to a correct answer. Compute the cost of each.</td>
-      <td>Any unintended route is cheap, or leaves no signature in the output</td>
-    </tr>
-    <tr>
-      <td>2</td>
-      <td>Sweep the grading threshold. Plot the cost of each route against it.</td>
-      <td>The verdict flips within a plausible range of thresholds</td>
-    </tr>
-    <tr>
-      <td>3</td>
-      <td>Fit the item at four or more input lengths.</td>
-      <td>Fit cost is constant in N — the item has a name</td>
-    </tr>
-    <tr>
-      <td>4</td>
-      <td>Feed the exact answer through the whole pipeline. Assert zero.</td>
-      <td>Anything other than zero, or a check that only covers the metric</td>
-    </tr>
-    <tr>
-      <td>5</td>
-      <td>Enumerate required quantities. For each: readable from input, or recomputable from output?</td>
-      <td>Every quantity is one or the other — the item cannot isolate the mechanism</td>
-    </tr>
-    <tr>
-      <td>6</td>
-      <td>Freeze conditions, metric, tolerance and the interpretation table before data exists.</td>
-      <td>Any of the above is still open when the first result arrives</td>
-    </tr>
-  </tbody>
-</table>
-</div>
+      <div class="tbl-scroll">
+        <table>
+          <caption>Table 6. Copy this.</caption>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Check</th>
+              <th>Fail condition</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>List every cheap route to a correct answer. Compute the cost of each.</td>
+              <td>Any unintended route is cheap, or leaves no signature in the output</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Sweep the grading threshold. Plot the cost of each route against it.</td>
+              <td>The verdict flips within a plausible range of thresholds</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Fit the item at four or more input lengths.</td>
+              <td>Fit cost is constant in N — the item has a name</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Feed the exact answer through the whole pipeline. Assert zero.</td>
+              <td>Anything other than zero, or a check that only covers the metric</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>Enumerate required quantities. For each: readable from input, or recomputable from output?</td>
+              <td>Every quantity is one or the other — the item cannot isolate the mechanism</td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td>Freeze conditions, metric, tolerance and the interpretation table before data exists.</td>
+              <td>Any of the above is still open when the first result arrives</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-<h2 id="limits">What the framework does not do</h2>
+      <h2 id="limits">What the framework does not do</h2>
 
-<p>
-  It does not tell you whether your probe is a <em>good</em> probe. Passing all five checks means
-  the item is not obviously bypassable, not obviously degenerate, and not obviously measuring the
-  wrong thing. That is a low bar. It filters out instruments that cannot possibly work; it says
-  nothing about whether the survivors measure anything useful.
-</p>
+      <p>
+        It does not tell you whether your probe is a <em>good</em> probe. Passing all five checks means
+        the item is not obviously bypassable, not obviously degenerate, and not obviously measuring the
+        wrong thing. That is a low bar. It filters out instruments that cannot possibly work; it says
+        nothing about whether the survivors measure anything useful.
+      </p>
 
-<p>
-  It also does not replace a power analysis, a sampling plan, or a decision about what effect size
-  would be interesting. Those are the questions you get to ask <em>after</em> the five checks pass,
-  and they are the hard ones.
-</p>
+      <p>
+        It also does not replace a power analysis, a sampling plan, or a decision about what effect size
+        would be interesting. Those are the questions you get to ask <em>after</em> the five checks pass,
+        and they are the hard ones.
+      </p>
 
-<p>
-  What it does is move the cheap, decisive failures to the front of the project, where they cost an
-  afternoon instead of a study. In this case, the afternoon's work was the entire contribution.
-</p>
+      <p>
+        What it does is move the cheap, decisive failures to the front of the project, where they cost an
+        afternoon instead of a study. In this case, the afternoon's work was the entire contribution.
+      </p>
 
-<hr>
+      <hr>
 
-<div class="card-grid">
-  <a class="card" href="findings.html" style="text-decoration:none;border-bottom:1px solid var(--rule)">
-    <h3>Findings, visualised</h3>
-    <p>Every result these rules produced, with its figure and its numbers.</p>
-  </a>
-  <a class="card" href="reproduce.html" style="text-decoration:none;border-bottom:1px solid var(--rule)">
-    <h3>Reproduce it</h3>
-    <p>Run all five checks yourself. Stdlib only, thirty seconds.</p>
-  </a>
-</div>
+      <div class="card-grid">
+        <a class="card" href="findings.html" style="text-decoration:none;border-bottom:1px solid var(--rule)">
+          <h3>Findings, visualised</h3>
+          <p>Every result these rules produced, with its figure and its numbers.</p>
+        </a>
+        <a class="card" href="reproduce.html" style="text-decoration:none;border-bottom:1px solid var(--rule)">
+          <h3>Reproduce it</h3>
+          <p>Run all five checks yourself. Stdlib only, thirty seconds.</p>
+        </a>
+      </div>
 
-</div>
-</main>
+    </div>
+  </main>
 
-<footer class="site-footer">
-  <div class="inner">
-    <span>Drape · MIT (code) · CC BY 4.0 (text and figures)</span>
-    <a href="https://github.com/namandhakad712/drape">github.com/namandhakad712/drape</a>
-    <a href="https://naman.is-a.dev">naman.is-a.dev</a>
-  </div>
-</footer>
+  <footer class="site-footer">
+    <div class="inner">
+      <span>Drape · MIT (code) · CC BY 4.0 (text and figures)</span>
+      <a href="https://github.com/namandhakad712/turtle-graphics-probe">github.com/namandhakad712/drape</a>
+      <a href="https://naman.is-a.dev">naman.is-a.dev</a>
+    </div>
+  </footer>
 
 </body>
+
 </html>

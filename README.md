@@ -269,7 +269,7 @@ understated by 11×. `analysis/run_all.py` now asserts the floor check on every 
 **No dependencies. Python 3.10+. Standard library only. No network, no API keys.**
 
 ```bash
-git clone https://github.com/namandhakad712/drape.git
+git clone https://github.com/namandhakad712/turtle-graphics-probe.git
 cd drape
 python analysis/run_all.py
 ```
@@ -410,7 +410,7 @@ One command per line. Semicolon-separated commands on a single line are rejected
   title   = {Drape: a negative result on Turtle Graphics as a visual-reasoning probe for language models},
   year    = {2026},
   version = {0.2.0},
-  url     = {https://github.com/namandhakad712/drape},
+  url     = {https://github.com/namandhakad712/turtle-graphics-probe},
   license = {MIT}
 }
 ```
