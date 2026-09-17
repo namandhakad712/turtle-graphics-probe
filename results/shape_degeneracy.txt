@@ -1,0 +1,43 @@
+====================================================================
+CANONICAL SPIRAL -- is the turn angle constant?
+====================================================================
+  turn per step : mean   8.25 deg   sd 0.308   range 8.04..9.48
+  segment length: mean   8.31      sd  3.58   range 2.26..14.47
+  coefficient of variation of turn angle: 3.74%
+
+====================================================================
+THE LAZY PROGRAM -- one command, repeated N times, zero state tracking
+====================================================================
+  forward(8.31); right(8.25)   x 90
+
+  mean path distance from the true spiral: 22.61 units
+  spiral diameter: 247.5 units
+  error as fraction of diameter: 9.13%
+
+  VERDICT: the shape does require genuine tracking.
+
+====================================================================
+THE PARAMETRIC PROGRAM -- three numbers, still no state tracking
+====================================================================
+  forward(2.17 + 0.138 * i); right(8.25)   x 90
+
+  mean path distance from the true spiral: 7.49 units
+  error as fraction of diameter: 3.03%
+
+  VERDICT: STILL DEGENERATE. A closed-form parametric program -- three
+  constants and a loop counter -- reproduces the shape. No state tracking
+  is required, so the item cannot measure state tracking.
+
+====================================================================
+WHAT THIS MEANS FOR SHAPE SELECTION
+====================================================================
+
+  A shape is only a valid item if NO closed-form program reproduces it.
+  Smooth analytic curves -- spirals, waves, arcs, circles -- all have one.
+  They are the worst possible test shapes, and they look the best in a demo.
+
+  Valid families need a program that cannot be written without knowing
+  where the pen currently is: random waypoints, irregular staircases,
+  paths with varying curvature, and multi-stroke shapes where the pen must
+  travel to a specific absolute location between strokes.
+

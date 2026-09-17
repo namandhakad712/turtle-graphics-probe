@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "If you cite this work, please use the metadata below."
+title: "Drape: a negative result on Turtle Graphics as a visual-reasoning probe for language models"
+abstract: >-
+  We test whether forcing a language model to reproduce an image through imperative
+  relative commands, rather than declarative markup, exposes spatial state tracking.
+  It does not. The test items are degenerate (a 199-command spiral is reproduced to
+  0.27% of its diameter by eight numbers); degeneracy has two independent doors, of
+  which only one is normally guarded; degeneracy is a joint property of the shape,
+  the grading tolerance, and the search class rather than a property of the shape;
+  and the route cannot answer the question it was built for, because every quantity
+  the task requires is either readable locally from the image or recomputable by
+  summing the model's own emitted tokens.
+type: software
+authors:
+  - family-names: "Dhakad"
+    given-names: "Naman"
+    alias: "namandhakad712"
+    website: "https://naman.is-a.dev"
+repository-code: "https://github.com/namandhakad712/drape"
+license: MIT
+keywords:
+  - llm-evaluation
+  - benchmark-design
+  - negative-results
+  - spatial-reasoning
+  - turtle-graphics
+  - validity
+version: "0.2.0"
+date-released: "2026-09-17"

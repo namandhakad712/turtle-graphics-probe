@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drape — a negative result on Turtle Graphics as a visual-reasoning probe</title>
+<meta name="description" content="A negative result on Turtle Graphics as a visual-reasoning probe for language models, with a reusable framework for testing whether a capability probe can work at all.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html">Drape <span>negative result</span></a>
+    <nav class="site-nav">
+      <a href="index.html">Overview</a>
+      <a href="paper.html" aria-current="page">Paper</a>
+      <a href="findings.html">Findings</a>
+      <a href="method.html">Method</a>
+      <a href="reproduce.html">Reproduce</a>
+      <a href="https://github.com/namandhakad712/drape">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main class="paper">
+<div class="prose">
+
+<h1 class="paper-title">Giving a Model a Pen: A Negative Result on Turtle Graphics as a Visual-Reasoning Probe</h1>
+
+<p class="paper-authors">Naman Dhakad</p>
+<p class="paper-affil">
+  Independent researcher · <a href="https://naman.is-a.dev">naman.is-a.dev</a> ·
+  <a href="https://github.com/namandhakad712/drape">github.com/namandhakad712/drape</a>
+</p>
+
+<section class="abstract">
+  <h2>Abstract</h2>
+  <p>
+    We test whether requiring a language model to reproduce an image through imperative relative
+    commands — a turtle with a position and a heading — rather than declarative markup, exposes
+    spatial state tracking. It does not, and we identify four reasons why, three of which are
+    general to the design of capability probes and one of which is specific and fatal.
+  </p>
+  <p>
+    First, the test items are degenerate: a 199-command spiral is reproduced to within
+    <strong>0.27%</strong> of its diameter by an eight-parameter program, with full coverage. Second,
+    degeneracy has two independent doors — cheap programs and cheap absolute moves — of which only
+    the first is normally guarded; six of nine shape families fail the two-sided test, and a regular
+    zigzag is drawn by a single absolute move. Third, degeneracy is not an intrinsic property of a
+    shape but a joint property of the shape, the grading tolerance, and the search class; the same
+    zigzag requires 199 absolute moves at 1% tolerance and 1 move at 2%, so the threshold chosen by
+    the experimenter determines the verdict. Fourth, and decisively, every quantity the task
+    requires is either locally readable from the image or recomputable by summing the model's own
+    emitted tokens, so no item design forces the computation into a non-textual channel.
+  </p>
+  <p>
+    We conclude that this route cannot answer whether a model reasons visually. We give a five-rule
+    framework for testing whether a proposed probe can work at all before any model is called, and
+    we report four bugs found in our own measurement code by the floor-check discipline that
+    framework prescribes — all four of which had made the headline result look stronger than it
+    was.
+  </p>
+</section>
+
+<div class="toc">
+  <h3>Contents</h3>
+  <ol>
+    <li><a href="#s1">Introduction</a></li>
+    <li><a href="#s2">Background and related work</a></li>
+    <li><a href="#s3">The proposed probe</a></li>
+    <li><a href="#s4">A framework for testing whether a probe can work</a></li>
+    <li><a href="#s5">Results</a></li>
+    <li><a href="#s6">Why the probe cannot measure its target</a></li>
+    <li><a href="#s7">Design rules for capability probes</a></li>
+    <li><a href="#s8">Threats to validity</a></li>
+    <li><a href="#s9">Conclusion</a></li>
+    <li><a href="#refs">References</a></li>
+    <li><a href="#appendix">Appendix A: measurement bugs</a></li>
+  </ol>
+</div>
+
+<h2 id="s1">1. Introduction</h2>
+
+<p>
+  A recurring ambition in the evaluation of language models is to measure not what a model
+  <em>says</em> but how it <em>represents</em>. One prominent line of interpretability work argues
+  that models maintain a limited internal workspace, and reports that in at least one frontier
+  model this workspace "is built almost entirely out of words" [1]. If a model's internal
+  representations are largely linguistic, then tasks that appear to require spatial or visual
+  competence may be solved by translating the problem into language and reasoning there.
+</p>
+
+<p>
+  This raises a natural evaluation question: can we construct a task that forces spatial
+  computation to happen <em>as</em> spatial computation, rather than as language? If such a task
+  existed, a model's performance on it would be evidence about the format of its representations
+  rather than only about their content.
+</p>
+
+<p>
+  This paper reports an attempt to build one such task, and its failure. The proposal was to use
+  Turtle Graphics [2] as the output modality. Declarative vector formats such as SVG are
+  order-independent lists of absolute coordinates. Turtle commands are relative and
+  order-dependent: the pen has a position and a heading, and each command is interpreted against
+  accumulated state. The hypothesis was that this makes state tracking obligatory, and that
+  measuring how the accumulated state degrades over a long program would therefore measure
+  something about spatial representation.
+</p>
+
+<p>
+  We built the interpreter and the analysis harness, and then — before calling any model — we
+  tested whether the instrument could measure what it claimed to. It could not. This paper reports
+  what we found, because the analysis transfers to other proposed probes and because the failure
+  mode is instructive.
+</p>
+
+<p>
+  Our contributions are:
+</p>
+<ul>
+  <li>
+    A demonstration that the proposed item family is degenerate: a 199-command shape is reproduced
+    by eight numbers to 0.27% of its diameter (§5.1).
+  </li>
+  <li>
+    The identification of a second, independent route by which a proposed probe can be bypassed —
+    absolute actions — and a two-sided validity test that catches both (§4.2, §5.2).
+  </li>
+  <li>
+    The observation that degeneracy is a joint property of item, tolerance and search class, with a
+    demonstration that a single threshold change moves a shape from 199 required actions to 1
+    (§5.3).
+  </li>
+  <li>
+    A scaling test that is robust to threshold choice, and the observation that the fixed-tolerance
+    test can only ever return a lower bound (§5.4, §5.5).
+  </li>
+  <li>
+    A structural argument that the probe cannot measure its target, and a five-rule framework for
+    establishing this class of result before spending compute (§6, §7).
+  </li>
+</ul>
+
+<h2 id="s2">2. Background and related work</h2>
+
+<h3>2.1 Turtle Graphics</h3>
+<p>
+  Turtle graphics originated in the LOGO programming language as a way to give children a concrete
+  model of geometric procedure [2]. The turtle is a drawing agent with a position and a heading;
+  commands such as <code>forward</code> and <code>right</code> are relative to the current heading,
+  and the agent's state is the accumulation of all preceding commands. This is the property that
+  motivated the present work: unlike a coordinate list, a turtle program cannot be interpreted
+  out of order.
+</p>
+
+<h3>2.2 Spatial reasoning evaluation</h3>
+<p>
+  A substantial body of work evaluates spatial reasoning in multimodal models, typically through
+  question answering over scenes and spatial relations [3]. These benchmarks measure whether a
+  model produces correct spatial <em>answers</em>. Our question is different and complementary: not
+  whether a model gets the right answer, but whether the task can be constructed so that the
+  required computation cannot be performed in language.
+</p>
+
+<h3>2.3 Vector graphics generation</h3>
+<p>
+  Generating SVG from images and text is well studied, with benchmarks covering a range of vector
+  styles and evaluation showing that pixel-based metrics do not capture vector-specific qualities
+  [4]. This literature establishes that models can produce vector output and that evaluating it is
+  non-trivial. It does not address whether a particular output format constrains the <em>internal</em>
+  computation, which is our concern.
+</p>
+
+<h3>2.4 Benchmark validity</h3>
+<p>
+  That benchmark performance can fail to generalise is well documented; classifiers that appear
+  robust on a held-out set can degrade on freshly collected data from the same distribution [5].
+  Our findings are of a related but distinct kind: not that performance fails to transfer, but that
+  the item itself can be solved by a route that bypasses the mechanism the item was designed to
+  measure. We argue in §7 that this failure mode is checkable in advance.
+</p>
+
+<h2 id="s3">3. The proposed probe</h2>
+
+<p>
+  The design under test was as follows. A shape is generated procedurally from a random seed and
+  rendered as an image. A model is given the image and asked to emit a turtle program that
+  reproduces it. The program is parsed against a whitelist and replayed in a simulator; model
+  output is never executed. Two families of metrics are computed: fidelity (how closely the
+  produced path matches the target) and process (whether the model used absolute commands, and
+  where in the program they occur).
+</p>
+
+<p>
+  The intended measurement was <em>drift</em>: the growing divergence between the turtle's true
+  state and the state implied by the model's program, together with whether the model ever
+  corrects. The hypothesis was that drift would reveal degradation of an internal spatial state
+  estimate, and that correction events would reveal whether the model monitors that estimate.
+</p>
+
+<p>
+  Six conditions were planned, varying whether an image was supplied, whether absolute commands
+  were permitted, and whether intermediate reasoning was permitted in the output. The
+  pre-registered outcome table is reproduced in §7.4.
+</p>
+
+<h2 id="s4">4. A framework for testing whether a probe can work</h2>
+
+<p>
+  Before running any model we asked a prior question: could the item be solved by a route that does
+  not involve the mechanism under test? This section defines the tests; §5 reports what they found.
+</p>
+
+<h3>4.1 Test A: is the item expressible by a small program?</h3>
+<p>
+  If a low-parameter program reproduces the item, then a model that recognises the shape's family
+  can emit that program without tracking anything. We fit a hierarchy of state-free programs to the
+  target: step length and turn angle modelled as polynomials of the command index, and as periodic
+  sequences of varying period. A program is <em>state-free</em> if each command is a function of
+  the index alone, so no accumulated state is consulted.
+</p>
+
+<h3>4.2 Test B: is the item expressible by a few absolute moves?</h3>
+<p>
+  A model may bypass accumulated state entirely by emitting absolute moves: read a landmark from
+  the image, jump to it, repeat. We measure the cost of this route as the fewest straight-line
+  chords that remain within a tolerance of the true path, computed by greedy chord extension. Each
+  chord corresponds to one absolute move. An item is valid only if it is expensive to draw by
+  <em>both</em> routes.
+</p>
+
+<h3>4.3 The scaling test</h3>
+<p>
+  Tests A and B both depend on a tolerance, which the experimenter chooses. The scaling test
+  removes that dependence by asking not whether a cheap program fits, but how the required fit cost
+  <em>scales</em> with the length of the shape. A shape whose fit cost is constant in the number of
+  segments has a name; a model that recognises the name reproduces it at any length. A valid item
+  requires fit cost to grow with N.
+</p>
+
+<h3>4.4 The floor check</h3>
+<p>
+  Every metric in this paper is validated by feeding it the <em>exact</em> answer — the program that
+  generated the shape — and asserting that it scores zero. This is not a formality. Four bugs in our
+  own measurement code were found this way, all of which had made the results look better than they
+  were (Appendix A). The floor check runs on every execution and the harness exits non-zero if it
+  fails.
+</p>
+
+<h2 id="s5">5. Results</h2>
+
+<h3 id="s5-1">5.1 The item family is degenerate</h3>
+
+<p>
+  Our flagship item was a 199-command Archimedean spiral. It is reproduced by eight numbers.
+</p>
+
+<figure>
+  <img src="assets/figures/fig1-degeneracy.svg"
+       alt="Left panel: a 199-segment spiral. Right panel: the same spiral in grey overlaid with a red dashed curve generated by an eight-parameter polynomial program. The two coincide.">
+  <figcaption>
+    <b>Figure 1.</b> The item and its reproduction. The grey curve is the 199-command target; the
+    red dashed curve is drawn by <code>forward(a0+a1u+a2u²+a3u³); right(b0+b1u+b2u²+b3u³)</code>
+    for u ∈ [−1, 1] — eight coefficients. Mean symmetric path distance: 0.27% of the shape's
+    diameter. Coverage at 2% tolerance: 100%.
+  </figcaption>
+</figure>
+
+<p>
+  The reason is that the spiral's kinematics are nearly closed-form. Turn angle per step has a
+  coefficient of variation of 3.74%, and step length is very nearly a smooth function of the
+  command index. Two low-order polynomials therefore carry the entire shape, and the resulting
+  program is a loop with a counter that consults no accumulated state.
+</p>
+
+<p>
+  Table 1 extends this to nine shape families spanning analytic, periodic and random constructions.
+  Six are reproduced by programs of at most 24 parameters.
+</p>
+
+<div class="tbl-scroll">
+<table>
+  <caption>Table 1. Two-sided item validity. Hops are absolute moves needed at 2% tolerance of shape diameter.</caption>
+  <thead>
+    <tr>
+      <th>Shape family</th>
+      <th class="num">Segments</th>
+      <th>Cheapest state-free program</th>
+      <th class="num">Params</th>
+      <th class="num">Error</th>
+      <th class="num">Hops</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>circular arc</td><td class="num">199</td><td>periodic, p=5</td><td class="num">10</td><td class="num"><strong>0.00%</strong></td><td class="num">8</td></tr>
+    <tr><td>5-point star</td><td class="num">10</td><td>periodic, p=4</td><td class="num">8</td><td class="num"><strong>0.00%</strong></td><td class="num">10</td></tr>
+    <tr><td>regular zigzag</td><td class="num">199</td><td>periodic, p=12</td><td class="num">24</td><td class="num"><strong>0.00%</strong></td><td class="num"><strong>1</strong></td></tr>
+    <tr><td>spiral</td><td class="num">199</td><td>polynomial, d=3</td><td class="num">8</td><td class="num"><strong>0.27%</strong></td><td class="num">16</td></tr>
+    <tr><td>irregular staircase</td><td class="num">200</td><td>periodic, p=6</td><td class="num">12</td><td class="num"><strong>0.41%</strong></td><td class="num"><strong>2</strong></td></tr>
+    <tr><td>bounded random walk</td><td class="num">199</td><td>polynomial, d=3</td><td class="num">8</td><td class="num">2.59%</td><td class="num">129</td></tr>
+    <tr><td>sine wave</td><td class="num">199</td><td>polynomial, d=2</td><td class="num">6</td><td class="num">13.81%</td><td class="num">9</td></tr>
+    <tr><td>aperiodic irregular</td><td class="num">199</td><td>polynomial, d=3</td><td class="num">8</td><td class="num">28.99%</td><td class="num">84</td></tr>
+    <tr><td>varying curvature</td><td class="num">199</td><td>polynomial, d=2</td><td class="num">6</td><td class="num">54.51%</td><td class="num">186</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  Note the ordering: the shapes that look most impressive in a demonstration — a spiral, a clean
+  circular arc — are the ones that die most completely. This is not a coincidence. Smooth analytic
+  curves are exactly the shapes that admit compact closed forms, which is why they are easy to draw
+  and why they are useless as probes.
+</p>
+
+<h3 id="s5-2">5.2 Degeneracy has two doors</h3>
+
+<figure>
+  <img src="assets/figures/fig2-two-doors.svg"
+       alt="Flow diagram: a candidate shape passes through Door A, whether a small program can draw it, and Door B, whether a few absolute moves can draw it. Both must be shut for the item to be valid.">
+  <figcaption>
+    <b>Figure 2.</b> An item is valid only if it is expensive to draw by both routes. This project
+    guarded only Door A.
+  </figcaption>
+</figure>
+
+<p>
+  The second door is the more dangerous of the two, because it bypasses the task with no loss of
+  fidelity. A model that reads landmarks from the image and jumps between them produces a correct
+  drawing while accumulating no state whatsoever, and therefore produces no drift to measure. Six
+  of the nine families in Table 1 are dead on this test alone.
+</p>
+
+<h3 id="s5-3">5.3 Degeneracy is not an intrinsic property of a shape</h3>
+
+<p>
+  Both tests depend on the grading tolerance, which is chosen by the experimenter. Table 2 varies
+  only that threshold.
+</p>
+
+<figure>
+  <img src="assets/figures/fig3-tolerance-cliff.svg"
+       alt="Line chart on log axes. Absolute moves needed versus grading tolerance from 0.5% to 5%. The regular zigzag stays at 199 moves at 0.5% and 1% then collapses to 1 move at 2% and 5%.">
+  <figcaption>
+    <b>Figure 3.</b> Absolute moves required to reproduce each shape, by grading tolerance. The
+    regular zigzag collapses from 199 moves to 1 between 1% and 2% tolerance. Nothing about the
+    shape changes.
+  </figcaption>
+</figure>
+
+<div class="tbl-scroll">
+<table>
+  <caption>Table 2. Absolute moves needed to reproduce each shape, by grading tolerance.</caption>
+  <thead>
+    <tr><th>Shape family</th><th class="num">0.5%</th><th class="num">1%</th><th class="num">2%</th><th class="num">5%</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>spiral</td><td class="num">33</td><td class="num">23</td><td class="num">16</td><td class="num">10</td></tr>
+    <tr><td>sine wave</td><td class="num">21</td><td class="num">13</td><td class="num">9</td><td class="num">6</td></tr>
+    <tr><td>circular arc</td><td class="num">17</td><td class="num">12</td><td class="num">8</td><td class="num">5</td></tr>
+    <tr><td>5-point star</td><td class="num">11</td><td class="num">10</td><td class="num">10</td><td class="num">10</td></tr>
+    <tr><td><strong>regular zigzag</strong></td><td class="num"><strong>199</strong></td><td class="num"><strong>199</strong></td><td class="num"><strong>1</strong></td><td class="num"><strong>1</strong></td></tr>
+    <tr><td>varying curvature</td><td class="num">199</td><td class="num">192</td><td class="num">186</td><td class="num">179</td></tr>
+    <tr><td><strong>irregular staircase</strong></td><td class="num"><strong>28</strong></td><td class="num"><strong>4</strong></td><td class="num"><strong>2</strong></td><td class="num"><strong>1</strong></td></tr>
+    <tr><td>bounded random walk</td><td class="num">185</td><td class="num">165</td><td class="num">129</td><td class="num">26</td></tr>
+    <tr><td>aperiodic irregular</td><td class="num">153</td><td class="num">123</td><td class="num">84</td><td class="num">27</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  A regular zigzag — a shape that presents as high-frequency, many-turn and visually intricate —
+  requires 199 absolute moves at 1% tolerance and one at 2%, because at 2% of its diameter it is a
+  straight line. The question "is this item degenerate?" therefore has no answer in isolation. The
+  answerable question is "at this tolerance, under this search class, is it?", and both parameters
+  are chosen by the person doing the measuring.
+</p>
+
+<h3 id="s5-4">5.4 The fixed-tolerance test can only return a lower bound</h3>
+
+<p>
+  Our fitter searches a deliberately small class. A shape outside that class will be scored as valid
+  even when it is a closed form. In Table 1, the <em>varying curvature</em> family scores as valid
+  with 54.51% error — but it was generated by <code>right(6 + 4·sin(2πi/60)); forward(9)</code>, a
+  three-constant closed form that our fitter cannot see because a sinusoid is neither polynomial
+  nor periodic at the sampled resolution.
+</p>
+
+<p>
+  The verdict is therefore always "no cheap program <em>found</em>", never "no cheap program
+  <em>exists</em>". Widen the class and more items die. Item validity rests on an assumption that
+  cannot be proved, only failed to be disproved.
+</p>
+
+<h3 id="s5-5">5.5 The scaling test</h3>
+
+<figure>
+  <img src="assets/figures/fig4-scaling.svg"
+       alt="Chart of parameters needed to fit within 1% of diameter, against number of segments N from 25 to 200. Five shape families are flat horizontal lines at 2 and 4 parameters. A shaded band marks four families that cannot be fit at any length.">
+  <figcaption>
+    <b>Figure 4.</b> Parameters needed to fit within 1% of diameter, by shape length. The same four
+    numbers draw the spiral at N=25 and at N=200. Four families cannot be fit at any length, which
+    is what a valid item looks like.
+  </figcaption>
+</figure>
+
+<p>
+  The scaling test is the only test in this paper that is not an artefact of a threshold we chose.
+  Its result is unambiguous: <strong>the same four parameters draw the spiral whether it has 25
+  segments or 200.</strong> A shape whose fit cost is constant in N has a name, and a model that
+  recognises the name reproduces it exactly at any length.
+</p>
+
+<h3 id="s5-6">5.6 Drift and cost</h3>
+
+<p>
+  Two supporting measurements constrain the design regardless of the validity question.
+</p>
+
+<figure>
+  <img src="assets/figures/fig5-drift.svg"
+       alt="Line chart of drift as a percentage of diameter against segment count, from 50 to 1000 segments, plotted on log axes, alongside a dashed square-root reference curve. The two nearly coincide.">
+  <figcaption>
+    <b>Figure 5.</b> Drift against program length, with a √N reference. Tenfold length gives 3.11×
+    drift; √10 = 3.16.
+  </figcaption>
+</figure>
+
+<div class="tbl-scroll">
+<table>
+  <caption>Table 3. Simulated drift under a 1° per-step heading error.</caption>
+  <thead><tr><th>Segments</th><th class="num">50</th><th class="num">100</th><th class="num">200</th><th class="num">500</th><th class="num">1000</th></tr></thead>
+  <tbody><tr><td>Drift, % of diameter</td><td class="num">8.8</td><td class="num">12.2</td><td class="num">17.5</td><td class="num">27.4</td><td class="num">38.0</td></tr></tbody>
+</table>
+</div>
+
+<p>
+  Drift is a random walk in position and grows as √N rather than linearly. The practical consequence
+  is severe for experimental design: to double the drift signal, the program length must be
+  quadrupled. A length sweep therefore buys signal very slowly, while its token cost grows linearly.
+</p>
+
+<figure>
+  <img src="assets/figures/fig6-token-cost.svg"
+       alt="Grouped bar chart on a log scale comparing turtle tokens against SVG tokens for 50, 200 and 1000 segments. The SVG form is constant at 20 tokens; the turtle form rises to 6000.">
+  <figcaption>
+    <b>Figure 6.</b> Output cost. A circle is one SVG element and N turtle segments.
+  </figcaption>
+</figure>
+
+<div class="tbl-scroll">
+<table>
+  <caption>Table 4. Token cost of the same circle in each form.</caption>
+  <thead><tr><th>Segments</th><th class="num">Turtle tokens</th><th class="num">SVG tokens</th><th class="num">Ratio</th></tr></thead>
+  <tbody>
+    <tr><td>50</td><td class="num">300</td><td class="num">20</td><td class="num">15×</td></tr>
+    <tr><td>200</td><td class="num">1,200</td><td class="num">20</td><td class="num">60×</td></tr>
+    <tr><td>1000</td><td class="num">6,000</td><td class="num">20</td><td class="num">300×</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="s6">6. Why the probe cannot measure its target</h2>
+
+<p>
+  The findings above are correctable. Item families can be replaced, tolerances pre-registered,
+  search classes widened. The finding in this section is not correctable, and it is the reason the
+  line of enquiry is closed.
+</p>
+
+<figure>
+  <img src="assets/figures/fig7-requirements.svg"
+       alt="Diagram: to emit the command for segment k the model needs the bend angle, readable from the image; it does not need its own heading, which the turtle holds. Below, two escape routes: scratch work in the output, and re-summing already-emitted commands.">
+  <figcaption>
+    <b>Figure 7.</b> What the task actually requires, and the two routes that cannot be closed.
+  </figcaption>
+</figure>
+
+<h3>6.1 The accumulation happens in the turtle, not in the model</h3>
+
+<p>
+  To emit the command for segment <em>k</em>, a model needs the turn from segment <em>k−1</em> to
+  segment <em>k</em>. This is the angle between two adjacent pieces of the picture: a local quantity
+  that can be read directly from the image. The model does <em>not</em> need to know its own
+  heading, because the turtle's heading is ground truth and the turtle maintains it.
+</p>
+
+<p>
+  It follows that a misread bend does not corrupt the model's estimate of anything. It corrupts the
+  <em>turtle's</em> position, downstream, because the turtle integrated the error. The accumulation
+  happens in the turtle, not in the model.
+</p>
+
+<div class="note red">
+  <span class="lbl">Consequence</span>
+  <p>
+    The drift metric does not measure state tracking. It measures per-step angular precision — a
+    perceptual acuity measure — because the state it appears to track is maintained by the
+    simulator, not by the subject.
+  </p>
+</div>
+
+<h3>6.2 State knowledge is optional, and the escape hatch is always open</h3>
+
+<p>
+  A model is forced to know its own state in exactly three situations: when it must close a path
+  back onto its start, when it must place a later stroke at a location defined relative to the
+  start, and when it must avoid crossing a stroke it has already drawn. In all three it can escape
+  by reading the target off the image and using an absolute move — which is the second door of
+  §5.2.
+</p>
+
+<p>
+  State tracking is therefore required only when absolute commands are <em>forbidden</em> and the
+  task simultaneously <em>demands</em> absolute knowledge. That combination is designable:
+  closed-loop reproduction with relative commands only. It is the only item design we are able to
+  defend, and it is untested here.
+</p>
+
+<h3>6.3 The output channel cannot be closed</h3>
+
+<p>
+  The model's output is text. It can write <code># running heading: 47</code> in the middle of the
+  program and attend back over it at every subsequent token. If intermediate reasoning is forbidden
+  in the output — strict parsing, turtle commands only — the model can still recompute the running
+  total at each step by summing the turn values it has already emitted, because it can see them.
+</p>
+
+<div class="note red">
+  <span class="lbl">The structural problem</span>
+  <p>
+    There is no configuration of this task that forces the computation into a non-textual channel.
+    Every quantity the task requires is either readable locally from the image or recomputable by
+    summing the model's own emitted tokens. This is a property of an architecture whose only output
+    is text, and no item design changes it.
+  </p>
+</div>
+
+<h3>6.4 What survives</h3>
+
+<p>
+  The probe cannot answer <em>"do models think in images?"</em> That question is not reachable from
+  the outside by this route.
+</p>
+
+<p>
+  A narrower question remains measurable: <strong>do models have a perceptual shortcut that beats a
+  text-strategy baseline?</strong> If a model solves closed-loop relative-only items better than a
+  text-only strategy could predict — and better than its own performance on a matched non-spatial
+  task of identical token cost — then something perceptual is doing work. This is falsifiable. It is
+  also a considerably smaller claim than the one the design was built to support, and the distance
+  between the two is worth stating explicitly rather than eliding.
+</p>
+
+<h2 id="s7">7. Design rules for capability probes</h2>
+
+<p>
+  The negative result is specific to turtle graphics. The framework is not. We state it as five
+  rules, intended to be applied before any model is called.
+</p>
+
+<h3>7.1 Two-door validity</h3>
+<p>
+  Test whether the item can be solved by a cheap program <em>and</em> by a small set of absolute
+  actions. Guarding one door is insufficient; the second is often the cheaper bypass and leaves no
+  trace in the output statistics.
+</p>
+
+<h3>7.2 Degeneracy is joint, not intrinsic</h3>
+<p>
+  Report degeneracy as a function of tolerance, or the threshold becomes the finding. A binary
+  pass/fail verdict conceals the fact that the experimenter selected the answer.
+</p>
+
+<h3>7.3 Prefer scaling over thresholds</h3>
+<p>
+  "Does the required complexity grow with input length?" is robust to threshold choice. A single
+  number at a single length is not. Where both are available, report the scaling behaviour as the
+  primary result.
+</p>
+
+<h3>7.4 Floor-check the measurement</h3>
+<p>
+  Feed the exact known answer back through the complete pipeline — metric, alignment, normalisation
+  — and assert it scores zero. Four bugs in our own code were found this way, all of which made the
+  result look better than it was (Appendix A). This check should run on every execution and fail
+  loudly.
+</p>
+
+<h3>7.5 Ask what each required quantity costs to obtain</h3>
+<p>
+  Enumerate the quantities the item requires the subject to know. For each, ask whether it is
+  locally readable from the input, or recomputable from the subject's own output. If every quantity
+  is one or the other, the item cannot isolate the mechanism it claims to measure, regardless of
+  how difficult it is.
+</p>
+
+<h3>7.6 Pre-registered outcome table</h3>
+<p>
+  For completeness, the conditions and outcome interpretations that were frozen before any model
+  call. Condition C3 (relative commands only) and C5 (C3 with output reasoning forbidden) are the
+  study; the remainder exist so that C3 and C5 can be interpreted.
+</p>
+
+<div class="tbl-scroll">
+<table>
+  <caption>Table 5. Pre-registered conditions and outcomes. Not executed.</caption>
+  <thead><tr><th>ID</th><th>Condition</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>C0</td><td>copy the image</td><td>fidelity ceiling</td></tr>
+    <tr><td>C1</td><td>describe in words only</td><td>no-image baseline</td></tr>
+    <tr><td>C2</td><td>reproduce, all commands allowed</td><td>the naive task</td></tr>
+    <tr><td>C3</td><td>reproduce, relative commands only</td><td>forces state knowledge</td></tr>
+    <tr><td>C4</td><td>reproduce from a description, no image</td><td>isolates perception from generation</td></tr>
+    <tr><td>C5</td><td>C3 with output reasoning forbidden</td><td>isolates hidden state from visible arithmetic</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="tbl-scroll">
+<table>
+  <caption>Table 6. Pre-registered interpretation of outcomes.</caption>
+  <thead><tr><th>Observation</th><th>Interpretation</th></tr></thead>
+  <tbody>
+    <tr><td>C3 ≈ C2 and C5 ≈ C3</td><td>state knowledge is not the bottleneck; the task measures perception</td></tr>
+    <tr><td>C3 ≪ C2</td><td>absolute commands were carrying the task — narrow finding</td></tr>
+    <tr><td>C5 ≪ C3</td><td>visible arithmetic was carrying the task — models account in their output</td></tr>
+    <tr><td>C5 ≈ C3, both ≪ C0</td><td>the only outcome supporting the original premise</td></tr>
+    <tr><td>flat across length</td><td>the length lever does not work; report and stop</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  Metric and tolerance were fixed in advance: symmetric mean path distance reported together with
+  coverage, at 1% of shape diameter. Section 5.3 is the reason this must be fixed before data
+  exists rather than after.
+</p>
+
+<h2 id="s8">8. Threats to validity</h2>
+
+<h3>8.1 Internal validity</h3>
+<p>
+  The central threat is our own measurement code. Four bugs were found, all in the direction of
+  flattering the conclusion, and all four were caught only by the floor check of §4.4. We regard the
+  remaining risk as low but non-zero, and the floor check is included in the released harness for
+  this reason.
+</p>
+
+<h3>8.2 Construct validity</h3>
+<p>
+  The principal construct concern is precisely the subject of §6: the metric does not measure what
+  it was designed to measure. This is not a residual threat but the paper's main result.
+</p>
+
+<h3>8.3 External validity</h3>
+<p>
+  Nine shape families are not a survey. They were chosen to span analytic, periodic and random
+  constructions rather than sampled from a population, and no claim is made about the distribution
+  of shapes in any real task. The scaling test mitigates this for the degeneracy finding by
+  reporting behaviour across four lengths per family, but the family selection remains a choice.
+</p>
+
+<h3>8.4 Conclusion validity</h3>
+<p>
+  The fitter's search class bounds every "valid" verdict from below. Where we report a shape as
+  valid, the correct reading is that no cheap program was found within a class of polynomials to
+  degree 3 and periodic sequences to period 12. Section 5.4 gives a worked example of a family that
+  escapes this class while being an obvious closed form.
+</p>
+
+<h3>8.5 Scope</h3>
+<p>
+  No model was called. Every cost figure is derived from token accounting rather than measured
+  spend, and every fidelity figure is a property of the analysis code rather than of any subject.
+  This paper is an analysis of an instrument, not an experiment on models, and should be read as
+  such.
+</p>
+
+<h2 id="s9">9. Conclusion</h2>
+
+<p>
+  We set out to build a probe for spatial reasoning out of turtle graphics, on the theory that
+  imperative relative commands would force a model to hold spatial state. We tested the probe before
+  using it, and it failed four ways.
+</p>
+
+<p>
+  Three of those failures are general to capability probes and are checkable in advance: items can
+  be degenerate; degeneracy has more than one door; and the verdict depends on a threshold the
+  experimenter chooses. We give a five-rule framework for catching all three before spending
+  compute.
+</p>
+
+<p>
+  The fourth failure is specific and fatal. The quantities the task requires are either locally
+  readable from the image or recomputable from the model's own output, so the task cannot force
+  computation into a non-textual channel, and therefore cannot answer the question it was built to
+  ask.
+</p>
+
+<p>
+  We publish the negative result because the alternative is to publish the version that looks good
+  in a demonstration. Our flagship item — a spiral, which renders beautifully and reads as a serious
+  geometric task — is the single most degenerate shape we tested. That is a general lesson about
+  capability probes, and it is the reason the analysis is worth more than the benchmark would have
+  been.
+</p>
+
+<h2 id="refs">References</h2>
+
+<ol class="references">
+  <li>
+    Anthropic (2026). <em>A global workspace in language models.</em>
+    <a href="https://www.anthropic.com/research/global-workspace">anthropic.com/research/global-workspace</a>
+  </li>
+  <li>
+    Papert, S. (1980). <em>Mindstorms: Children, Computers, and Powerful Ideas.</em> Basic Books.
+  </li>
+  <li>
+    Wang, J. et al. (2024). <em>SpatialEval: A Benchmark for Spatial Reasoning in Multimodal Large
+    Language Models.</em> NeurIPS 2024.
+    <a href="https://github.com/jiayuww/SpatialEval">github.com/jiayuww/SpatialEval</a>
+  </li>
+  <li>
+    Rodriguez, J. A. et al. (2025). <em>StarVector: Generating Scalable Vector Graphics Code from
+    Images.</em> CVPR 2025. arXiv:2312.11556.
+  </li>
+  <li>
+    Recht, B., Roelofs, R., Schmidt, L., and Shankar, V. (2019). <em>Do ImageNet Classifiers
+    Generalize to ImageNet?</em> ICML 2019. arXiv:1902.10811.
+  </li>
+</ol>
+
+<h2 id="appendix">Appendix A: measurement bugs</h2>
+
+<p>
+  Four bugs were found in our own measurement code during the course of this work. We report them
+  because a negative result that cannot be reproduced is not a result, and because all four had made
+  the headline finding look stronger than it was. Each was caught by the floor check of §4.4.
+</p>
+
+<div class="tbl-scroll">
+<table>
+  <caption>Table 7. Bugs found in the measurement pipeline, and their effect on the result.</caption>
+  <thead><tr><th>Bug</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Kinematics were derived from a path resampled to equal arc length.</td>
+      <td>Resampling to equal arc length forces every segment to the same length <em>by
+      construction</em>. The step-length sequence was erased and the test was silently measuring
+      turn angles only.</td>
+    </tr>
+    <tr>
+      <td><code>heading -= turn</code> instead of <code>heading += turn</code> in the integrator.</td>
+      <td>Every candidate reproduction was compared against a <em>mirror</em> of the target. Because
+      the metric is nearest-point, a mirrored smooth curve still scores well and the error does not
+      announce itself.</td>
+    </tr>
+    <tr>
+      <td>Alignment returned a centred shape and scored it against an uncentred original.</td>
+      <td>A constant translation error was injected into every measurement.</td>
+    </tr>
+    <tr>
+      <td>The rotation search was unseeded.</td>
+      <td>For symmetric shapes the search locks onto the wrong symmetry axis — a five-point star is
+      invariant under 72° rotations — and reports a large error for an exact reproduction.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  The measured error of the flagship spiral was <strong>3.03%</strong> before these fixes and
+  <strong>0.27%</strong> after. The headline finding was understated by a factor of eleven by bugs
+  that made the instrument look better than it was.
+</p>
+
+<div class="note">
+  <span class="lbl">Reproducing this paper</span>
+  <p>
+    Every number in this paper is produced by <code>python analysis/run_all.py</code> from fixed
+    seeds, with no dependencies beyond the Python standard library and no network access. The
+    harness asserts the floor check and exits non-zero if it fails. See
+    <a href="reproduce.html">Reproduce</a>.
+  </p>
+</div>
+
+</div>
+</main>
+
+<footer class="site-footer">
+  <div class="inner">
+    <span>Drape · MIT (code) · CC BY 4.0 (text and figures)</span>
+    <a href="https://github.com/namandhakad712/drape">github.com/namandhakad712/drape</a>
+    <a href="https://naman.is-a.dev">naman.is-a.dev</a>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,6 @@
+# Normalise line endings so the analysis output is byte-identical across platforms
+* text=auto eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.cff text eol=lf

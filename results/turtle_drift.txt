@@ -1,0 +1,49 @@
+==========================================================================
+ERROR PROPAGATION: turtle vs absolute-coordinate formats
+==========================================================================
+
+RMS endpoint displacement, as a fraction of the drawing's diameter.
+Heading noise per turn, 4000 trials per cell.
+
+ segments | sigma= 0.5 deg | sigma= 1.0 deg | sigma= 2.0 deg
+------------------------------------------------------------
+       50 |          4.4% |          8.8% |         17.4%
+      100 |          6.1% |         12.2% |         24.3%
+      200 |          8.8% |         17.5% |         34.5%
+      500 |         13.8% |         27.4% |         53.2%
+     1000 |         19.3% |         38.0% |         71.7%
+
+      SVG | flat, indep. of N | flat, indep. of N | flat, indep. of N
+
+Turtle drift grows with segment count. SVG drift does not.
+
+==========================================================================
+OUTPUT COST: the same circle
+==========================================================================
+
+ segments | turtle tokens | SVG tokens |   ratio
+------------------------------------------------
+       50 |           300 |         20 |     15x
+      100 |           600 |         20 |     30x
+      200 |         1,200 |         20 |     60x
+      500 |         3,000 |         20 |    150x
+     1000 |         6,000 |         20 |    300x
+
+A circle is one SVG element and N turtle segments.
+The turtle form costs orders of magnitude more tokens to say less.
+
+==========================================================================
+WHAT THIS IMPLIES
+==========================================================================
+
+1. Turtle adds a failure mode that is not perceptual. A model can
+   see the image perfectly and still fail, purely by drifting.
+2. That failure grows with path length, so harder drawings fail for
+   reasons unrelated to task difficulty -- an unfair, non-monotonic
+   difficulty curve.
+3. Grading cannot separate 'could not see it' from 'lost track of
+   heading'. Two very different hypotheses, one score.
+
+This does not make turtle worthless. It makes it a probe for
+sequential state tracking, not for visual reasoning.
+

@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reproduce — Drape</title>
+<meta name="description" content="Reproduce every number in Drape: no dependencies, Python 3.10+, fixed seeds, about thirty seconds. Includes the floor check that guards against the authors' own bugs.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html">Drape <span>negative result</span></a>
+    <nav class="site-nav">
+      <a href="index.html">Overview</a>
+      <a href="paper.html">Paper</a>
+      <a href="findings.html">Findings</a>
+      <a href="method.html">Method</a>
+      <a href="reproduce.html" aria-current="page">Reproduce</a>
+      <a href="https://github.com/namandhakad712/drape">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<section class="hero">
+  <p class="kicker">Reproduce</p>
+  <h1>Every number, in about thirty seconds, with no dependencies.</h1>
+  <p class="lede">
+    Standard library only. No network, no API keys, no model access, fixed seeds. The harness
+    asserts the floor check on every run and refuses to let you read the results if it fails.
+  </p>
+  <div class="meta">
+    <span>Python 3.10+</span>
+    <span>Zero dependencies</span>
+    <span>Fixed seeds</span>
+    <span>Byte-identical across platforms</span>
+  </div>
+</section>
+
+<div class="toc">
+  <h3>On this page</h3>
+  <ol>
+    <li><a href="#quick">Quick start</a></li>
+    <li><a href="#output">What it produces</a></li>
+    <li><a href="#floor">The floor check</a></li>
+    <li><a href="#individual">Running one analysis at a time</a></li>
+    <li><a href="#figures">Regenerating the figures</a></li>
+    <li><a href="#verify">Verifying it on your machine</a></li>
+    <li><a href="#layout">Repository layout</a></li>
+    <li><a href="#interpreter">Using the interpreter</a></li>
+    <li><a href="#publish">Publishing this site</a></li>
+    <li><a href="#cite">Citing this work</a></li>
+  </ol>
+</div>
+
+<div class="prose">
+
+<h2 id="quick">Quick start</h2>
+
+<pre><code>git clone https://github.com/namandhakad712/drape.git
+cd drape
+python analysis/run_all.py</code></pre>
+
+<p>
+  That is the whole thing. It runs six analysis scripts, writes their output to <code>results/</code>,
+  then asserts the floor check. If the exact generating program does not score <code>0.0000%</code>,
+  it exits non-zero and tells you not to trust the numbers above it.
+</p>
+
+<p>
+  There is nothing to install. No <code>requirements.txt</code>, no virtual environment, no build
+  step. If you have a Python interpreter, you have everything.
+</p>
+
+<h2 id="output">What it produces</h2>
+
+<div class="tbl-scroll">
+<table>
+  <caption>Table 1. The six analysis scripts and what each one writes.</caption>
+  <thead><tr><th>Output file</th><th>Contents</th><th>Feeds</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>results/degeneracy_sweep.txt</code></td>
+      <td>Two-sided item validity, tolerance sensitivity, the limit of the test, the scaling test,
+          the floor check</td>
+      <td>Tables 1–3, Figures 1–4</td>
+    </tr>
+    <tr>
+      <td><code>results/turtle_drift.txt</code></td>
+      <td>RMS endpoint displacement against program length and heading noise; token cost of turtle
+          versus SVG output</td>
+      <td>Tables 4–5, Figures 5–6</td>
+    </tr>
+    <tr>
+      <td><code>results/shape_degeneracy.txt</code></td>
+      <td>The first, single-sided degeneracy test. Superseded — kept as the record of the mistake.</td>
+      <td>§5.1 kinematics</td>
+    </tr>
+    <tr>
+      <td><code>results/spiral_demo.txt</code></td>
+      <td>A correct spiral and a drifted spiral, as raw path data, for the plain-terms explainer</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td><code>results/degeneracy_svg.txt</code></td>
+      <td>Raw path data for the overlay figure</td>
+      <td>Figure 1</td>
+    </tr>
+    <tr>
+      <td><code>results/degeneracy_widget.txt</code></td>
+      <td>The eight fitted coefficients, plus target and reproduction path data</td>
+      <td>Figure 1</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  The captured output is committed. You do not have to run anything to check a number against this
+  site — <code>results/</code> in the repository is the same text.
+</p>
+
+<h2 id="floor">The floor check</h2>
+
+<p>
+  This is the part worth understanding before trusting anything else. Every metric is fed the
+  <em>exact</em> answer — the program that generated the shape — and must return zero. Four bugs in
+  the measurement code were found this way, and all four had made the headline result look
+  <strong>stronger</strong> than it was.
+</p>
+
+<p>
+  What a passing run looks like:
+</p>
+
+<pre><code>==============================================================================
+FLOOR CHECK -- the exact program must score 0.00%
+==============================================================================
+
+  spiral (analytic)              0.0000%
+  sine wave (analytic)           0.0000%
+  circular arc (analytic)        0.0000%
+  5-point star (periodic)        0.0000%
+  regular zigzag (periodic)      0.0000%
+  varying curvature (smooth)     0.0000%
+  irregular staircase            0.0000%
+  bounded random walk            0.0000%
+  aperiodic irregular            0.0000%
+
+  worst floor: 0.0000%  --  PASS</code></pre>
+
+<p>
+  And what <code>run_all.py</code> prints at the end of a successful run:
+</p>
+
+<pre><code>  floor check passed: the exact program scores 0.0000%.</code></pre>
+
+<p>
+  If that line is absent, the run failed. <code>run_all.py</code> exits with status 1, so it will
+  also break a CI job — which is the intended behaviour.
+</p>
+
+<h2 id="individual">Running one analysis at a time</h2>
+
+<p>
+  To see the headline finding on its own, without the rest:
+</p>
+
+<pre><code>python analysis/degeneracy_sweep.py</code></pre>
+
+<p>
+  Then look for two sections in the output. The first is the verdict table:
+</p>
+
+<pre><code>TWO-SIDED ITEM VALIDITY TEST
+  n = 200 points | tolerance 5% of diameter | hop tolerance 2%
+
+shape family                 segs       best fake  par    err%   cov%  hops  verdict
+--------------------------------------------------------------------------------------
+spiral (analytic)             199        poly d=3    8   0.27%   100%    16  DEAD (both)
+regular zigzag (periodic)     199   periodic p=12   24   0.00%   100%     1  DEAD (both)
+varying curvature (smooth)    199        poly d=2    6  54.51%     1%   186  VALID
+...
+families surviving BOTH tests: 3 of 9</code></pre>
+
+<p>
+  The second is the scaling test, which is the one result in the work that is not an artefact of a
+  threshold we chose:
+</p>
+
+<pre><code>  spiral (analytic)                4 ->     4   x1.0   FLAT   (degenerate)
+  sine wave (analytic)            24 ->   199   x8.3   GROWS  (valid)
+  regular zigzag (periodic)        4 ->     4   x1.0   FLAT   (degenerate)</code></pre>
+
+<p>
+  <code>FLAT</code> means the same number of parameters draws the shape at N=25 and at N=200. The
+  shape has a name, and a model that knows the name wins at any length.
+</p>
+
+<h2 id="figures">Regenerating the figures</h2>
+
+<pre><code>python analysis/make_figures.py     # writes docs/assets/figures/*.svg</code></pre>
+
+<p>
+  Every figure on this site is generated by that script from the same code paths the analysis uses.
+  Nothing is drawn by hand and nothing is pasted in, so changing the analysis changes the figures.
+  The SVGs are written with <code>newline="\n"</code> so a re-run in a fresh clone is byte-identical
+  rather than showing up as a modified file on Windows.
+</p>
+
+<p>
+  The figures live under <code>docs/assets/figures/</code> rather than a separate top-level
+  directory, so a single copy serves both the GitHub README and this site.
+</p>
+
+<h2 id="verify">Verifying it on your machine</h2>
+
+<p>
+  Every script uses fixed seeds and the standard library only, so the output is deterministic. To
+  confirm that for yourself:
+</p>
+
+<pre><code>python analysis/run_all.py
+git status --short          # results/ should be unmodified
+
+# if git reports modified files but git diff shows nothing, the stat cache is
+# stale rather than the content:
+git add --renormalize .</code></pre>
+
+<p>
+  The <code>.gitattributes</code> file pins <code>eol=lf</code> for all text, which is what stops a
+  Windows checkout from reporting every file as changed.
+</p>
+
+<h2 id="layout">Repository layout</h2>
+
+<pre><code>drape/                    the interpreter — the part of the work that is sound
+  turtle.py                 parser + simulator. NEVER executes model output.
+  __init__.py               what the analysis established, and what it did not
+
+analysis/                 every number in this repository, from fixed seeds
+  degeneracy_sweep.py       two-sided validity, scaling test, floor check   [main]
+  make_figures.py           generates every figure as standalone SVG
+  turtle_drift.py           drift and token cost against program length
+  shape_degeneracy.py       the first, single-sided test (superseded)
+  degeneracy_widget.py      figure data for the overlay
+  degeneracy_svg.py         raw path data for the overlay
+  spiral_demo.py            correct versus drifted spiral
+  run_all.py                runs everything and asserts the floor check
+
+results/                  captured output of the analysis, committed as evidence
+docs/                     this site
+  index.html                overview
+  paper.html                the full write-up
+  findings.html             every result, visualised
+  method.html               the five-rule framework
+  reproduce.html            this page
+  assets/style.css          design system
+  assets/figures/*.svg      publication figures, generated
+
+README.md                 the findings, in full, readable on GitHub
+LICENSE                   MIT (code)
+CITATION.cff              machine-readable citation metadata
+</code></pre>
+
+<p>
+  <code>shape_degeneracy.py</code> is kept deliberately. It is the first, single-sided version of
+  the test, and its closing recommendation names "irregular staircases" as a valid item family —
+  which the two-sided test later showed is drawn by <strong>two absolute hops</strong>. It is the
+  record of how the finding was reached, including the mistake.
+</p>
+
+<h2 id="interpreter">Using the interpreter</h2>
+
+<p>
+  <code>drape/turtle.py</code> is the part of the work that is sound, and it is usable on its own.
+</p>
+
+<div class="note red">
+  <span class="lbl">Safety</span>
+  <p>
+    <strong>Model output is never executed.</strong> Programs are parsed against a whitelist of
+    eight commands and replayed by an interpreter that only ever does arithmetic. If you are
+    building anything that takes a model's output as a drawing instruction, this is the pattern to
+    copy — <code>exec</code> on untrusted input is how you get owned.
+  </p>
+</div>
+
+<pre><code>from drape.turtle import parse_program, simulate, to_source
+
+program = """
+forward(10)
+right(90)
+fd(5)
+setheading(0)
+"""
+
+cmds, errors = parse_program(program, allow_absolute=True)
+trace = simulate(cmds)
+
+trace.segments          # [(x0, y0, x1, y1), ...]
+trace.escape_hatch_used # True — setheading was used
+trace.n_goto, trace.n_setheading
+trace.endpoint          # (x, y)
+trace.path_length</code></pre>
+
+<p>
+  <code>allow_absolute=False</code> rejects <code>goto</code> and <code>setheading</code> — the
+  condition that would force a model to maintain its own state, if the analysis had not shown that
+  the escape hatch can be reopened by other means. Aliases (<code>fd</code>, <code>rt</code>,
+  <code>pu</code>, <code>setpos</code>, …) normalise to canonical names.
+</p>
+
+<p>
+  One command per line. Semicolon-separated commands on a single line are rejected; unrecognised
+  lines become errors rather than being guessed at.
+</p>
+
+<h2 id="publish">Publishing this site</h2>
+
+<p>
+  This site is plain HTML and CSS with no build step, served from <code>docs/</code> on the
+  <code>main</code> branch. To publish your own copy:
+</p>
+
+<pre><code># once, if you have not already authenticated
+gh auth login
+
+# create the repository and push
+gh repo create drape --public --source=. --remote=origin --push</code></pre>
+
+<p>
+  Then, in the repository on GitHub: <strong>Settings → Pages → Source: Deploy from a branch →
+  Branch: <code>main</code>, Folder: <code>/docs</code> → Save.</strong> The site appears at
+  <code>https://&lt;username&gt;.github.io/drape/</code> within a minute or two. The
+  <code>.nojekyll</code> file in <code>docs/</code> stops Jekyll from trying to process the
+  directory, which would otherwise drop files beginning with an underscore.
+</p>
+
+<p>
+  All links are relative, so the site works identically at a project path, at a user root, or
+  opened straight off disk.
+</p>
+
+<h2 id="cite">Citing this work</h2>
+
+<pre><code>@software{dhakad2026drape,
+  author  = {Dhakad, Naman},
+  title   = {Drape: a negative result on Turtle Graphics as a
+             visual-reasoning probe for language models},
+  year    = {2026},
+  version = {0.2.0},
+  url     = {https://github.com/namandhakad712/drape},
+  license = {MIT}
+}</code></pre>
+
+<p>
+  Machine-readable metadata is in <code>CITATION.cff</code>, which GitHub renders as a "Cite this
+  repository" button.
+</p>
+
+<hr>
+
+<div class="note">
+  <span class="lbl">Licence</span>
+  <p>
+    Code is <strong>MIT</strong> — see <code>LICENSE</code>. Text and figures are
+    <strong>CC BY 4.0</strong>. Use either freely; a citation is appreciated and a correction is
+    welcome.
+  </p>
+</div>
+
+<div class="card-grid">
+  <a class="card" href="paper.html" style="text-decoration:none;border-bottom:1px solid var(--rule)">
+    <h3>Read the paper</h3>
+    <p>The full write-up, including threats to validity and the four bugs.</p>
+  </a>
+  <a class="card" href="https://github.com/namandhakad712/drape" style="text-decoration:none;border-bottom:1px solid var(--rule)">
+    <h3>The repository</h3>
+    <p>Source, results, figures and issues.</p>
+  </a>
+</div>
+
+</div>
+</main>
+
+<footer class="site-footer">
+  <div class="inner">
+    <span>Drape · MIT (code) · CC BY 4.0 (text and figures)</span>
+    <a href="https://github.com/namandhakad712/drape">github.com/namandhakad712/drape</a>
+    <a href="https://naman.is-a.dev">naman.is-a.dev</a>
+  </div>
+</footer>
+
+</body>
+</html>

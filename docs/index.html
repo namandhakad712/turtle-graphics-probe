@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drape — a negative result on Turtle Graphics as a visual-reasoning probe</title>
+<meta name="description" content="We tested whether forcing a language model to draw through imperative relative commands exposes spatial reasoning. It does not, and we can show exactly why. A negative result with a reusable method for validating capability probes.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html">Drape <span>negative result</span></a>
+    <nav class="site-nav">
+      <a href="index.html" aria-current="page">Overview</a>
+      <a href="paper.html">Paper</a>
+      <a href="findings.html">Findings</a>
+      <a href="method.html">Method</a>
+      <a href="reproduce.html">Reproduce</a>
+      <a href="https://github.com/namandhakad712/drape">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<section class="hero">
+  <p class="kicker">Negative result · 2026</p>
+  <h1>Giving a model a pen does not reveal how it thinks.</h1>
+  <p class="lede">
+    We built a probe for spatial reasoning out of Turtle Graphics, on the theory that imperative
+    relative commands would force a language model to hold spatial state. We then tested the
+    probe. It does not work, and the reason is structural — not a matter of better shapes or
+    better conditions.
+  </p>
+  <div class="meta">
+    <span>Naman Dhakad</span>
+    <span>No models were called — this is an analysis of the instrument</span>
+    <span>No dependencies · Python 3.10+</span>
+  </div>
+</section>
+
+<div class="metrics">
+  <div class="metric">
+    <span class="v red">8</span>
+    <span class="k">numbers reproduce a 199-command test item</span>
+  </div>
+  <div class="metric">
+    <span class="v red">0.27%</span>
+    <span class="k">mean deviation, as a share of shape diameter</span>
+  </div>
+  <div class="metric">
+    <span class="v red">6 of 9</span>
+    <span class="k">shape families are degenerate items</span>
+  </div>
+  <div class="metric">
+    <span class="v green">0.0000%</span>
+    <span class="k">floor check — the exact program must score zero</span>
+  </div>
+</div>
+
+<div class="prose">
+
+<h2 id="the-idea">The idea, and what happened to it</h2>
+
+<p>
+  Frontier models read images and emit images or SVG. SVG is <em>declarative</em> — a list of
+  absolute coordinates. Turtle Graphics is <em>imperative</em> — a pen with a position and a
+  heading, where each command is interpreted against accumulated state. So the argument went:
+  force a model to reproduce an image through turtle commands rather than SVG, and it must
+  <em>hold</em> spatial state. Measure how that state degrades, and you have measured something
+  about spatial reasoning.
+</p>
+
+<p>
+  The instrument was built. Then the instrument was tested, before spending anything on models.
+  Four things fell out, and the fourth one closes the line of enquiry.
+</p>
+
+<figure>
+  <img src="assets/figures/fig1-degeneracy.svg"
+       alt="Left: a 199-segment spiral test item. Right: the same spiral overlaid with a red dashed curve produced by an eight-parameter polynomial program, visually indistinguishable from the original.">
+  <figcaption>
+    <b>The flagship item and its reproduction.</b> The grey curve is the 199-command item. The red
+    dashed curve is drawn by a loop with a counter and eight coefficients. Mean deviation:
+    0.27% of the shape's diameter. Coverage: 100%.
+  </figcaption>
+</figure>
+
+<h2 id="findings">The four findings</h2>
+
+<div class="card-grid">
+  <div class="card">
+    <span class="num red">01</span>
+    <h3>The items are degenerate</h3>
+    <p>A 199-command spiral is reproduced by eight numbers to within a quarter of one percent of its
+       diameter. Turn angle is near-constant and step length near-smooth, so two low-order
+       polynomials carry the whole shape. Nothing is tracked.</p>
+  </div>
+  <div class="card">
+    <span class="num red">02</span>
+    <h3>There is a second door</h3>
+    <p>An item must be expensive both to express as a small program <em>and</em> to express as a few
+       absolute moves. We only guarded the first. A regular zigzag is drawn by <strong>one</strong>
+       absolute move. Six of nine families are dead.</p>
+  </div>
+  <div class="card">
+    <span class="num red">03</span>
+    <h3>Degeneracy is not intrinsic</h3>
+    <p>It is a property of shape × grading tolerance × search class — all three chosen by the
+       experimenter. The same zigzag needs 199 moves at 1% tolerance and 1 move at 2%. The
+       threshold <em>is</em> the finding.</p>
+  </div>
+  <div class="card">
+    <span class="num red">04</span>
+    <h3>It cannot be tested</h3>
+    <p>Every quantity the task needs is either readable locally off the image or recomputable by
+       summing the model's own emitted tokens. No item design forces the computation into a
+       non-textual channel. The question is unreachable.</p>
+  </div>
+</div>
+
+<h2 id="why">Why the route cannot work</h2>
+
+<p>
+  To emit the command for segment <em>k</em>, a model needs the turn from segment <em>k−1</em> to
+  segment <em>k</em>. That is the angle between two adjacent pieces of the picture — a local
+  quantity it can read straight off the image. It does <em>not</em> need to know its own heading,
+  because the turtle maintains that.
+</p>
+
+<p>
+  So a misread bend does not corrupt the model's estimate of anything. It corrupts the
+  <em>turtle's</em> position, downstream, because the turtle integrated the error. The accumulation
+  happens in the turtle, not in the model — which means the drift metric measures per-step angular
+  precision, a perceptual acuity measure, and not state tracking.
+</p>
+
+<figure>
+  <img src="assets/figures/fig7-requirements.svg"
+       alt="Diagram contrasting what segment k requires: the bend angle, readable from the image, versus its own heading, which the turtle holds and which the model therefore never needs. Below, the two escape routes: visible scratch work, or re-summing already-emitted commands.">
+  <figcaption>
+    <b>What the task actually requires.</b> The left route is cheap and local. The right route is
+    unnecessary. And below, the two escape routes that cannot be closed: scratch work in the
+    output, or re-summing the model's own already-emitted turns.
+  </figcaption>
+</figure>
+
+<div class="note red">
+  <span class="lbl">The structural problem</span>
+  <p>
+    There is no configuration of this task that forces the computation into a non-textual channel.
+    Every quantity it requires is either readable locally from the image or recomputable by summing
+    the model's own emitted tokens. That is a property of an architecture whose only output is
+    text, and no amount of item design changes it.
+  </p>
+</div>
+
+<p>
+  What survives is narrower and still worth asking: <strong>do models have a perceptual shortcut
+  that beats a text-strategy baseline?</strong> That is measurable and falsifiable. It is not AGI,
+  and the gap between those two framings is the whole distance between this being a paper and
+  being a press release.
+</p>
+
+<h2 id="read">Read on</h2>
+
+<div class="card-grid">
+  <a class="card" href="paper.html" style="text-decoration:none;border-bottom:1px solid var(--rule)">
+    <h3>The paper</h3>
+    <p>Full write-up: abstract, method, results, threats to validity, references. Print-ready.</p>
+  </a>
+  <a class="card" href="findings.html" style="text-decoration:none;border-bottom:1px solid var(--rule)">
+    <h3>Findings, visualised</h3>
+    <p>Every result with its figure and its numbers, from the degeneracy overlay to the tolerance
+       cliff.</p>
+  </a>
+  <a class="card" href="method.html" style="text-decoration:none;border-bottom:1px solid var(--rule)">
+    <h3>The method</h3>
+    <p>Five rules for testing whether a proposed capability probe can work at all — before you
+       spend anything on models.</p>
+  </a>
+  <a class="card" href="reproduce.html" style="text-decoration:none;border-bottom:1px solid var(--rule)">
+    <h3>Reproduce it</h3>
+    <p>No dependencies, fixed seeds, about thirty seconds. Includes the floor check that guards
+       against our own bugs.</p>
+  </a>
+</div>
+
+</div>
+</main>
+
+<footer class="site-footer">
+  <div class="inner">
+    <span>Drape · MIT (code) · CC BY 4.0 (text and figures)</span>
+    <a href="https://github.com/namandhakad712/drape">github.com/namandhakad712/drape</a>
+    <a href="https://naman.is-a.dev">naman.is-a.dev</a>
+  </div>
+</footer>
+
+</body>
+</html>
