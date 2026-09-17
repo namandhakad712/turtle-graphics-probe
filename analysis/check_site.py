@@ -7,15 +7,23 @@ Checks, with no dependencies:
   3. every page carries the full navigation, and marks exactly one page current
   4. tags are balanced, ignoring void elements
   5. every <img> has a non-empty alt attribute
+  6. every page has a description, a canonical URL and a favicon link
 
-    python analysis/check_site.py
+    python analysis/check_site.py               validate docs/
+    python analysis/check_site.py --selftest    prove the checks can fail
 
 Exits non-zero if anything fails, so it can gate a deploy.
+
+The --selftest mode exists for the reason the paper gives: a check that has
+never been observed to fail is not evidence. It copies the site to a temporary
+directory, injects four faults, and asserts that all four are reported.
 """
 import html.parser
 import os
 import re
+import shutil
 import sys
+import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -26,6 +34,14 @@ NAV = ["index.html", "paper.html", "findings.html", "method.html", "reproduce.ht
 
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link",
         "meta", "param", "source", "track", "wbr"}
+
+# (label, fragment to append, the substring the checker should report)
+FAULTS = [
+    ("dead page link", '<p><a href="nope.html">x</a></p>', "nope.html"),
+    ("dead anchor", '<p><a href="#missing-anchor">x</a></p>', "missing-anchor"),
+    ("image with no alt", '<p><img src="assets/style.css"></p>', "no alt attribute"),
+    ("unclosed tag", "<p>never closed", "never closed"),
+]
 
 
 class Page(html.parser.HTMLParser):
@@ -89,11 +105,12 @@ def nav_of(text):
     return re.findall(r'href="([^"]+)"', m.group(1))
 
 
-def main():
+def check(docs):
+    """Return a list of problems found in the site rooted at `docs`."""
     problems = []
 
     for name in PAGES:
-        path = os.path.join(DOCS, name)
+        path = os.path.join(docs, name)
         if not os.path.exists(path):
             problems.append(f"{name}: MISSING")
             continue
@@ -107,9 +124,8 @@ def main():
         for err in p.errors:
             problems.append(f"{name}: {err}")
 
-        if p.stack:
-            for tag, line in p.stack:
-                problems.append(f"{name}: <{tag}> opened at line {line} never closed")
+        for tag, line in p.stack:
+            problems.append(f"{name}: <{tag}> opened at line {line} never closed")
 
         # navigation
         got = nav_of(text)
@@ -120,7 +136,7 @@ def main():
                 problems.append(f"{name}: navigation missing {want}")
         if p.current_marks != 1:
             problems.append(
-                f"{name}: expected exactly one aria-current=\"page\", found {p.current_marks}")
+                f'{name}: expected exactly one aria-current="page", found {p.current_marks}')
 
         # images need alt text
         for i, alt in enumerate(p.imgs):
@@ -128,6 +144,14 @@ def main():
                 problems.append(f"{name}: <img> #{i + 1} has no alt attribute")
             elif not alt.strip():
                 problems.append(f"{name}: <img> #{i + 1} has empty alt text")
+
+        # head metadata
+        if not re.search(r'<meta name="description" content="[^"]+"', text):
+            problems.append(f"{name}: no meta description")
+        if 'rel="canonical"' not in text:
+            problems.append(f"{name}: no canonical link")
+        if 'rel="icon"' not in text:
+            problems.append(f"{name}: no favicon link")
 
         # references
         for attr, value in p.refs:
@@ -141,9 +165,9 @@ def main():
             target, _, frag = value.partition("#")
             if not target:
                 continue
-            resolved = os.path.normpath(os.path.join(DOCS, target))
+            resolved = os.path.normpath(os.path.join(docs, target))
             if not os.path.exists(resolved):
-                problems.append(f"{name}: {attr}=\"{value}\" -> file not found")
+                problems.append(f'{name}: {attr}="{value}" -> file not found')
                 continue
             if frag and resolved.endswith(".html"):
                 with open(resolved, encoding="utf-8") as fh:
@@ -152,19 +176,78 @@ def main():
                     problems.append(f"{name}: {value} -> anchor not found")
 
     # required support files
-    for rel in (".nojekyll", "assets/style.css"):
-        if not os.path.exists(os.path.join(DOCS, rel)):
+    for rel in (".nojekyll", "assets/style.css", "assets/favicon.svg"):
+        if not os.path.exists(os.path.join(docs, rel)):
             problems.append(f"docs/{rel}: MISSING")
 
-    figs = os.path.join(DOCS, "assets", "figures")
+    figs = os.path.join(docs, "assets", "figures")
     if not os.path.isdir(figs):
         problems.append("docs/assets/figures: MISSING")
-    else:
-        n = len([f for f in os.listdir(figs) if f.endswith(".svg")])
-        print(f"  figures found: {n}")
 
+    return problems
+
+
+def selftest():
+    """Inject known faults and assert the checker reports every one.
+
+    Without this, 'the site check passes' is a claim about an untested program.
+    """
+    print("  SELFTEST -- injecting faults into a temporary copy")
+    failures = []
+
+    tmp = tempfile.mkdtemp(prefix="drape-selftest-")
+    try:
+        copy = os.path.join(tmp, "docs")
+        shutil.copytree(DOCS, copy)
+
+        for label, fragment, expect in FAULTS:
+            target = os.path.join(copy, "index.html")
+            with open(target, encoding="utf-8") as fh:
+                original = fh.read()
+
+            with open(target, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write(original.replace("</main>", fragment + "\n</main>", 1))
+
+            found = check(copy)
+            hit = any(expect in prob for prob in found)
+
+            with open(target, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write(original)
+
+            status = "caught" if hit else "MISSED"
+            print(f"    {label:<22} {status}")
+            if not hit:
+                failures.append(label)
+
+        # the restored copy must be clean, or the selftest proves nothing
+        residual = check(copy)
+        if residual:
+            print(f"    restore                 DIRTY ({len(residual)} problems)")
+            failures.extend(residual)
+        else:
+            print("    restore                 clean")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    print()
+    if failures:
+        print(f"  {len(failures)} fault(s) not caught -- the checker is not trustworthy.")
+        return 1
+    print("  all four faults caught, and the restored copy is clean.")
+    return 0
+
+
+def main(argv):
+    if "--selftest" in argv:
+        return selftest()
+
+    figs = os.path.join(DOCS, "assets", "figures")
+    n_figs = len([f for f in os.listdir(figs) if f.endswith(".svg")]) \
+        if os.path.isdir(figs) else 0
+    print(f"  figures found: {n_figs}")
     print(f"  pages checked: {len(PAGES)}")
 
+    problems = check(DOCS)
     if problems:
         print()
         for prob in problems:
@@ -178,4 +261,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))

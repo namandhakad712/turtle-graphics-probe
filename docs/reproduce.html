@@ -5,6 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Reproduce — Drape</title>
 <meta name="description" content="Reproduce every number in Drape: no dependencies, Python 3.10+, fixed seeds, about thirty seconds. Includes the floor check that guards against the authors' own bugs.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://namandhakad712.github.io/drape/reproduce.html">
+<meta name="author" content="Naman Dhakad">
+<meta name="theme-color" content="#1f5fa8">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Drape">
+<meta property="og:url" content="https://namandhakad712.github.io/drape/reproduce.html">
+<meta property="og:title" content="Reproduce — Drape">
+<meta property="og:description" content="Reproduce every number in Drape: no dependencies, Python 3.10+, fixed seeds, about thirty seconds. Includes the floor check that guards against the authors' own bugs.">
+<meta property="og:image" content="https://namandhakad712.github.io/drape/assets/figures/fig1-degeneracy.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Reproduce — Drape">
+<meta name="twitter:description" content="Reproduce every number in Drape: no dependencies, Python 3.10+, fixed seeds, about thirty seconds. Includes the floor check that guards against the authors' own bugs.">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
@@ -47,7 +60,8 @@
     <li><a href="#output">What it produces</a></li>
     <li><a href="#floor">The floor check</a></li>
     <li><a href="#individual">Running one analysis at a time</a></li>
-    <li><a href="#figures">Regenerating the figures</a></li>
+    <li>  <a href="#figures">Regenerating the figures</a></li>
+    <li><a href="#site">Validating this site</a></li>
     <li><a href="#verify">Verifying it on your machine</a></li>
     <li><a href="#layout">Repository layout</a></li>
     <li><a href="#interpreter">Using the interpreter</a></li>
@@ -216,6 +230,37 @@ families surviving BOTH tests: 3 of 9</code></pre>
   directory, so a single copy serves both the GitHub README and this site.
 </p>
 
+<h2 id="site">Validating this site</h2>
+
+<p>
+  The documentation site has its own checker, for the same reason the analysis has a floor check.
+</p>
+
+<pre><code>python analysis/check_site.py               # links, anchors, tag balance, alt text
+python analysis/check_site.py --selftest    # prove the checks can fail</code></pre>
+
+<p>
+  The first command verifies that every local link resolves, every in-page anchor exists, every tag
+  is balanced, every image has alt text, and every page carries a description, a canonical URL and
+  a favicon. It exits non-zero if anything fails, so it can gate a deploy.
+</p>
+
+<p>
+  The second is the more interesting one. It copies the site to a temporary directory, injects four
+  faults — a dead page link, a dead anchor, an image with no alt text, and an unclosed tag — and
+  asserts that all four are reported. A check that has never been observed to fail is not evidence
+  that the thing it checks is correct.
+</p>
+
+<pre><code>  SELFTEST -- injecting faults into a temporary copy
+    dead page link         caught
+    dead anchor            caught
+    image with no alt      caught
+    unclosed tag           caught
+    restore                 clean
+
+  all four faults caught, and the restored copy is clean.</code></pre>
+
 <h2 id="verify">Verifying it on your machine</h2>
 
 <p>
@@ -250,6 +295,8 @@ analysis/                 every number in this repository, from fixed seeds
   degeneracy_svg.py         raw path data for the overlay
   spiral_demo.py            correct versus drifted spiral
   run_all.py                runs everything and asserts the floor check
+  check_site.py             validates the docs/ site (--selftest proves it can fail)
+  add_head_meta.py          idempotently adds favicon / canonical / OG tags
 
 results/                  captured output of the analysis, committed as evidence
 docs/                     this site
@@ -259,7 +306,9 @@ docs/                     this site
   method.html               the five-rule framework
   reproduce.html            this page
   assets/style.css          design system
+  assets/favicon.svg        the mark
   assets/figures/*.svg      publication figures, generated
+  .nojekyll                 stops Jekyll from processing the directory
 
 README.md                 the findings, in full, readable on GitHub
 LICENSE                   MIT (code)
